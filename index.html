@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bolão 42 - Palpites</title>
+    <title>Bolão 42</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -14,204 +14,90 @@
             --tg-theme-secondary-bg-color: #efeff3;
             --tg-theme-hint-color: #999999;
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            overflow-x: hidden;
+            margin: 0; padding: 0;
+            user-select: none; overflow-x: hidden;
         }
-
         .header {
-            padding: 15px;
-            background-color: var(--tg-theme-secondary-bg-color);
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            padding: 15px; background-color: var(--tg-theme-secondary-bg-color);
+            border-bottom: 1px solid rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100;
         }
-
-        .header h1 {
-            margin: 0 0 5px 0;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .info-bar {
-            font-size: 13px;
-            color: var(--tg-theme-hint-color);
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .info-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .container {
-            padding: 10px;
-            padding-bottom: 100px; /* Espaço extra para o botão no Android */
-        }
-
+        .container { padding: 10px; padding-bottom: 100px; }
         .game-card {
-            background-color: var(--tg-theme-bg-color);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            background-color: var(--tg-theme-bg-color); border-radius: 12px;
+            padding: 15px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: space-between;
             border: 1px solid rgba(0,0,0,0.05);
         }
-
-        .teams {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .team-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .team-name {
-            font-size: 15px;
-            font-weight: 500;
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
+        .teams { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+        .team-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .team-name { font-size: 15px; font-weight: 500; flex: 1; }
         .score-input {
-            width: 45px;
-            height: 35px;
-            border-radius: 8px;
+            width: 45px; height: 35px; border-radius: 8px;
             border: 1px solid var(--tg-theme-hint-color);
             background-color: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-text-color);
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-            outline: none;
-            -webkit-appearance: none; /* Remove setas no iOS/Android */
-            margin: 0;
+            color: var(--tg-theme-text-color); text-align: center;
+            font-size: 18px; font-weight: bold; outline: none;
         }
-
-        .score-input:focus {
-            border-color: var(--tg-theme-button-color);
-            background-color: var(--tg-theme-bg-color);
-        }
-
-        /* Estilo para placeholder vazio */
-        .score-input::placeholder {
-            color: transparent;
-        }
-
         .star-btn {
-            margin-left: 15px;
-            font-size: 28px;
-            cursor: pointer;
-            color: var(--tg-theme-hint-color);
-            transition: transform 0.1s, color 0.2s;
-            padding: 5px;
-            line-height: 1;
+            margin-left: 15px; font-size: 28px; cursor: pointer;
+            color: var(--tg-theme-hint-color); transition: transform 0.1s;
         }
-
-        .star-btn.active {
-            color: #FFD700;
-            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
-        }
-
-        .star-btn:active {
-            transform: scale(1.2);
-        }
-
-        .star-btn.disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .vs {
-            font-size: 12px;
-            color: var(--tg-theme-hint-color);
-            text-align: center;
-            margin: 0 5px;
-        }
+        .star-btn.active { color: #FFD700; }
+        .star-btn.disabled { opacity: 0.3; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1 id="rodada-title">Carregando...</h1>
-        <div class="info-bar">
-            <div class="info-item">⏰ <span id="info-horario">--:--</span></div>
-            <div class="info-item" id="info-dobrada-container">💰 <span id="info-dobrada">Verificando...</span></div>
+        <div id="info-bar" style="font-size: 12px; color: var(--tg-theme-hint-color);">
+            <span id="info-horario"></span> | <span id="info-dobrada"></span>
         </div>
     </div>
-
-    <div class="container" id="games-list">
-        <!-- Jogos serão inseridos aqui via JS -->
-    </div>
+    <div class="container" id="games-list"></div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        
-        // Configurações para Android/iOS
         tg.expand();
-        tg.ready(); // Notifica o Telegram que o app está pronto (importante para Android)
+        tg.ready();
 
         let gamesData = [];
         let selectedStarIndex = -1;
-        let canUseDobrada = true;
 
         function init() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const dataRaw = urlParams.get('data');
-            
-            if (!dataRaw) {
-                document.body.innerHTML = '<div style="padding:20px;text-align:center;">Erro: Dados não encontrados.</div>';
-                return;
-            }
-
             try {
-                // Decodificação robusta para Base64
+                const urlParams = new URLSearchParams(window.location.search);
+                const dataRaw = urlParams.get('data');
+                
+                if (!dataRaw) throw new Error("Sem dados");
+
+                // Decodificação segura
                 const decodedData = JSON.parse(atob(dataRaw));
                 
-                // Suporte para chaves abreviadas ou completas (compatibilidade com o bot corrigido)
-                const rodadaNum = decodedData.r || decodedData.rodada;
+                // Mapeamento de chaves curtas ou longas
+                const rodada = decodedData.r || decodedData.rodada;
                 const horario = decodedData.h || decodedData.horario;
-                canUseDobrada = decodedData.d !== undefined ? decodedData.d : decodedData.pode_dobrada;
+                const podeDobrada = decodedData.d !== undefined ? decodedData.d : decodedData.pode_dobrada;
                 gamesData = decodedData.j || decodedData.jogos;
 
-                document.getElementById('rodada-title').innerText = `Rodada ${rodadaNum}`;
+                document.getElementById('rodada-title').innerText = `Rodada ${rodada}`;
                 document.getElementById('info-horario').innerText = `Fecha às ${horario}`;
+                document.getElementById('info-dobrada').innerText = podeDobrada ? "Estrela disponível" : "Estrela já usada";
                 
-                const dobradaText = canUseDobrada ? "Você tem direito à Estrela (2x)" : "Você já usou a Dobrada nesta rodada";
-                document.getElementById('info-dobrada').innerText = dobradaText;
-                
-                if (!canUseDobrada) {
-                    document.getElementById('info-dobrada-container').style.color = '#ff4d4d';
-                }
-
-                renderGames();
+                renderGames(podeDobrada);
             } catch (e) {
-                console.error("Erro ao processar dados:", e);
-                document.body.innerHTML = '<div style="padding:20px;text-align:center;">Erro ao carregar dados. Verifique o link.</div>';
+                document.body.innerHTML = `<div style="padding:20px;text-align:center;">
+                    <h3>Erro ao carregar</h3>
+                    <p>Por favor, feche e abra novamente pelo bot.</p>
+                    <small>${e.message}</small>
+                </div>`;
             }
         }
 
-        function renderGames() {
+        function renderGames(podeDobrada) {
             const list = document.getElementById('games-list');
             list.innerHTML = '';
 
@@ -219,108 +105,59 @@
                 const card = document.createElement('div');
                 card.className = 'game-card';
                 
-                const starClass = !canUseDobrada ? 'disabled' : '';
-                
-                // CORREÇÃO: Usar valores vazios se vierem vazios do bot
-                const hScore = game.home_score !== undefined ? game.home_score : "";
-                const aScore = game.away_score !== undefined ? game.away_score : "";
-                
-                // Se o jogo já veio com PD marcado
-                if (game.is_pd) {
-                    selectedStarIndex = index;
-                }
+                // Verifica se já veio com PD
+                if (game.is_pd) selectedStarIndex = index;
 
                 card.innerHTML = `
                     <div class="teams">
                         <div class="team-row">
                             <span class="team-name">${game.home}</span>
-                            <input type="number" class="score-input" id="score-home-${index}" 
-                                   pattern="[0-9]*" inputmode="numeric" placeholder="" value="${hScore}">
+                            <input type="number" class="score-input" id="h-${index}" inputmode="numeric" value="${game.home_score || ''}">
                         </div>
                         <div class="team-row">
                             <span class="team-name">${game.away}</span>
-                            <input type="number" class="score-input" id="score-away-${index}" 
-                                   pattern="[0-9]*" inputmode="numeric" placeholder="" value="${aScore}">
+                            <input type="number" class="score-input" id="a-${index}" inputmode="numeric" value="${game.away_score || ''}">
                         </div>
                     </div>
-                    <div class="star-btn ${starClass} ${game.is_pd ? 'active' : ''}" id="star-${index}" onclick="toggleStar(${index})">★</div>
+                    <div class="star-btn ${!podeDobrada && !game.is_pd ? 'disabled' : ''} ${game.is_pd ? 'active' : ''}" 
+                         onclick="toggleStar(${index}, ${podeDobrada})">★</div>
                 `;
                 list.appendChild(card);
             });
 
-            // Configuração do Botão Principal
-            tg.MainButton.setText("ENVIAR PALPITES");
-            tg.MainButton.setParams({
-                button_color: "#2481cc",
-                text_color: "#ffffff"
-            });
-            tg.MainButton.show();
-            
-            // Remover listeners antigos para evitar duplicidade
-            tg.MainButton.offClick(sendPalpites);
-            tg.MainButton.onClick(sendPalpites);
+            tg.MainButton.setText("ENVIAR PALPITES").show().onClick(send);
         }
 
-        function toggleStar(index) {
-            if (!canUseDobrada) {
-                tg.HapticFeedback.notificationOccurred('error');
-                return;
-            }
-
+        function toggleStar(index, podeDobrada) {
+            if (!podeDobrada && selectedStarIndex !== index) return;
             const stars = document.querySelectorAll('.star-btn');
-            
             if (selectedStarIndex === index) {
                 selectedStarIndex = -1;
                 stars[index].classList.remove('active');
-                tg.HapticFeedback.impactOccurred('light');
             } else {
-                if (selectedStarIndex !== -1) {
-                    stars[selectedStarIndex].classList.remove('active');
-                }
+                if (selectedStarIndex !== -1) stars[selectedStarIndex].classList.remove('active');
                 selectedStarIndex = index;
                 stars[index].classList.add('active');
-                tg.HapticFeedback.impactOccurred('medium');
             }
         }
 
-        function sendPalpites() {
-            const results = [];
-            let allFilled = true;
-
+        function send() {
+            const res = [];
             for (let i = 0; i < gamesData.length; i++) {
-                const homeScore = document.getElementById(`score-home-${i}`).value.trim();
-                const awayScore = document.getElementById(`score-away-${i}`).value.trim();
-
-                if (homeScore === '' || awayScore === '') {
-                    allFilled = false;
-                    break;
+                const h = document.getElementById(`h-${i}`).value;
+                const a = document.getElementById(`a-${i}`).value;
+                if (h === '' || a === '') {
+                    tg.showAlert("Preencha todos os jogos!");
+                    return;
                 }
-
-                let line = `${gamesData[i].home} ${homeScore} x ${awayScore} ${gamesData[i].away}`;
-                if (selectedStarIndex === i) {
-                    line += " PD";
-                }
-                results.push(line);
+                let line = `${gamesData[i].home} ${h} x ${a} ${gamesData[i].away}`;
+                if (selectedStarIndex === i) line += " PD";
+                res.push(line);
             }
-
-            if (!allFilled) {
-                tg.showAlert("Por favor, preencha todos os placares antes de enviar.");
-                tg.HapticFeedback.notificationOccurred('warning');
-                return;
-            }
-
-            const finalString = results.join('\n');
-            
-            // Enviar dados e fechar
-            tg.sendData(finalString);
-            
-            // Fallback para fechar o app caso o sendData demore no Android
-            setTimeout(() => {
-                tg.close();
-            }, 500);
+            tg.sendData(res.join('\n'));
+            setTimeout(() => tg.close(), 200);
         }
 
-        // Iniciar
         init();
     </script>
 </body>
