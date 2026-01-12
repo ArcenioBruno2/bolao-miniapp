@@ -47,7 +47,6 @@
             color: var(--tg-theme-hint-color); transition: transform 0.1s;
         }
         .star-btn.active { color: #FFD700; }
-        .star-btn.disabled { opacity: 0.3; cursor: default; }
     </style>
 </head>
 <body>
@@ -67,12 +66,12 @@
         let gamesData = [];
         let selectedStarIndex = -1;
         let podeDobradaGlobal = false;
+        let tinhaEstrelaNoInicio = false; // NOVA TRAVA
 
         function init() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const dataRaw = urlParams.get('data');
-                
                 if (!dataRaw) throw new Error("Sem dados");
 
                 const decodedData = JSON.parse(atob(dataRaw));
@@ -82,22 +81,24 @@
                 podeDobradaGlobal = decodedData.d !== undefined ? decodedData.d : decodedData.pode_dobrada;
                 gamesData = decodedData.j || decodedData.jogos;
 
-                document.getElementById('rodada-title').innerText = `Rodada ${rodada}`;
-                document.getElementById('info-horario').innerText = `Fecha às ${horario}`;
-                document.getElementById('info-dobrada').innerText = podeDobradaGlobal ? "Estrela disponível" : "Estrela já usada";
-                
-                // Primeiro, identifica se já existe um jogo com estrela vindo dos dados
+                // Verifica se já veio alguma estrela marcada originalmente
                 gamesData.forEach((game, index) => {
-                    if (game.is_pd) selectedStarIndex = index;
+                    if (game.is_pd) {
+                        selectedStarIndex = index;
+                        tinhaEstrelaNoInicio = true; // Se ele já tinha, ele pode editar
+                    }
                 });
 
+                document.getElementById('rodada-title').innerText = `Rodada ${rodada}`;
+                document.getElementById('info-horario').innerText = `Fecha às ${horario}`;
+                
+                // Texto informativo
+                const statusEstrela = (podeDobradaGlobal || tinhaEstrelaNoInicio) ? "Estrela disponível" : "Estrela indisponível";
+                document.getElementById('info-dobrada').innerText = statusEstrela;
+                
                 renderGames();
             } catch (e) {
-                document.body.innerHTML = `<div style="padding:20px;text-align:center;">
-                    <h3>Erro ao carregar</h3>
-                    <p>Por favor, feche e abra novamente pelo bot.</p>
-                    <small>${e.message}</small>
-                </div>`;
+                document.body.innerHTML = `<div style="padding:20px;text-align:center;"><h3>Erro ao carregar</h3><small>${e.message}</small></div>`;
             }
         }
 
@@ -108,26 +109,20 @@
             gamesData.forEach((game, index) => {
                 const card = document.createElement('div');
                 card.className = 'game-card';
-                
-                // A estrela deve estar habilitada se:
-                // 1. O usuário ainda tem direito a estrela (podeDobradaGlobal)
-                // 2. OU se já existe uma estrela selecionada (permitindo trocar de lugar)
                 const isStarActive = selectedStarIndex === index;
 
                 card.innerHTML = `
                     <div class="teams">
                         <div class="team-row">
                             <span class="team-name">${game.home}</span>
-                            <input type="number" class="score-input" id="h-${index}" inputmode="numeric" value="${game.home_score || ''}">
+                            <input type="number" class="score-input" id="h-${index}" inputmode="numeric" value="${game.home_score !== undefined ? game.home_score : ''}">
                         </div>
                         <div class="team-row">
                             <span class="team-name">${game.away}</span>
-                            <input type="number" class="score-input" id="a-${index}" inputmode="numeric" value="${game.away_score || ''}">
+                            <input type="number" class="score-input" id="a-${index}" inputmode="numeric" value="${game.away_score !== undefined ? game.away_score : ''}">
                         </div>
                     </div>
-                    <div class="star-btn ${isStarActive ? 'active' : ''}" 
-                         id="star-${index}"
-                         onclick="toggleStar(${index})">★</div>
+                    <div class="star-btn ${isStarActive ? 'active' : ''}" onclick="toggleStar(${index})">★</div>
                 `;
                 list.appendChild(card);
             });
@@ -136,24 +131,26 @@
         }
 
         function toggleStar(index) {
-            // Se o usuário NÃO pode usar dobrada E não há nenhuma estrela selecionada na tela (tentando criar uma nova)
-            if (!podeDobradaGlobal && selectedStarIndex === -1) {
-                tg.showAlert("Você já utilizou sua estrela nesta rodada e não pode adicionar uma nova.");
+            // LÓGICA CORRIGIDA:
+            // Permite clicar se:
+            // 1. O servidor disse que pode (podeDobradaGlobal)
+            // 2. OU se o usuário já entrou na tela com uma estrela (tinhaEstrelaNoInicio)
+            if (!podeDobradaGlobal && !tinhaEstrelaNoInicio) {
+                tg.showAlert("Você não possui estrela disponível para esta rodada.");
                 return;
             }
 
             const stars = document.querySelectorAll('.star-btn');
             
             if (selectedStarIndex === index) {
-                // Desmarca a atual
+                // Desmarca
                 selectedStarIndex = -1;
                 stars[index].classList.remove('active');
             } else {
-                // Remove a marcação da anterior (se houver)
+                // Remove anterior e marca nova
                 if (selectedStarIndex !== -1) {
                     stars[selectedStarIndex].classList.remove('active');
                 }
-                // Marca a nova
                 selectedStarIndex = index;
                 stars[index].classList.add('active');
             }
