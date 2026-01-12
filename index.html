@@ -47,7 +47,7 @@
             color: var(--tg-theme-hint-color); transition: transform 0.1s;
         }
         .star-btn.active { color: #FFD700; }
-        .star-btn.disabled { opacity: 0.3; }
+        .star-btn.disabled { opacity: 0.3; cursor: default; }
     </style>
 </head>
 <body>
@@ -66,6 +66,7 @@
 
         let gamesData = [];
         let selectedStarIndex = -1;
+        let podeDobradaGlobal = false;
 
         function init() {
             try {
@@ -74,20 +75,23 @@
                 
                 if (!dataRaw) throw new Error("Sem dados");
 
-                // Decodificação segura
                 const decodedData = JSON.parse(atob(dataRaw));
                 
-                // Mapeamento de chaves curtas ou longas
                 const rodada = decodedData.r || decodedData.rodada;
                 const horario = decodedData.h || decodedData.horario;
-                const podeDobrada = decodedData.d !== undefined ? decodedData.d : decodedData.pode_dobrada;
+                podeDobradaGlobal = decodedData.d !== undefined ? decodedData.d : decodedData.pode_dobrada;
                 gamesData = decodedData.j || decodedData.jogos;
 
                 document.getElementById('rodada-title').innerText = `Rodada ${rodada}`;
                 document.getElementById('info-horario').innerText = `Fecha às ${horario}`;
-                document.getElementById('info-dobrada').innerText = podeDobrada ? "Estrela disponível" : "Estrela já usada";
+                document.getElementById('info-dobrada').innerText = podeDobradaGlobal ? "Estrela disponível" : "Estrela já usada";
                 
-                renderGames(podeDobrada);
+                // Primeiro, identifica se já existe um jogo com estrela vindo dos dados
+                gamesData.forEach((game, index) => {
+                    if (game.is_pd) selectedStarIndex = index;
+                });
+
+                renderGames();
             } catch (e) {
                 document.body.innerHTML = `<div style="padding:20px;text-align:center;">
                     <h3>Erro ao carregar</h3>
@@ -97,7 +101,7 @@
             }
         }
 
-        function renderGames(podeDobrada) {
+        function renderGames() {
             const list = document.getElementById('games-list');
             list.innerHTML = '';
 
@@ -105,8 +109,10 @@
                 const card = document.createElement('div');
                 card.className = 'game-card';
                 
-                // Verifica se já veio com PD
-                if (game.is_pd) selectedStarIndex = index;
+                // A estrela deve estar habilitada se:
+                // 1. O usuário ainda tem direito a estrela (podeDobradaGlobal)
+                // 2. OU se já existe uma estrela selecionada (permitindo trocar de lugar)
+                const isStarActive = selectedStarIndex === index;
 
                 card.innerHTML = `
                     <div class="teams">
@@ -119,8 +125,9 @@
                             <input type="number" class="score-input" id="a-${index}" inputmode="numeric" value="${game.away_score || ''}">
                         </div>
                     </div>
-                    <div class="star-btn ${!podeDobrada && !game.is_pd ? 'disabled' : ''} ${game.is_pd ? 'active' : ''}" 
-                         onclick="toggleStar(${index}, ${podeDobrada})">★</div>
+                    <div class="star-btn ${isStarActive ? 'active' : ''}" 
+                         id="star-${index}"
+                         onclick="toggleStar(${index})">★</div>
                 `;
                 list.appendChild(card);
             });
@@ -128,30 +135,25 @@
             tg.MainButton.setText("ENVIAR PALPITES").show().onClick(send);
         }
 
-        function toggleStar(index, podeDobrada) {
-            // ========================================================================
-            // CORREÇÃO: Permitir trocar a estrela mesmo quando já foi usada (edição)
-            // A lógica antiga bloqueava quando !podeDobrada && selectedStarIndex !== index
-            // Agora permitimos trocar livremente entre jogos
-            // ========================================================================
-            
-            // Se a estrela não está disponível E não há nenhuma estrela selecionada
-            // (ou seja, é um novo palpite e não pode usar dobrada), então bloqueia
-            if (!podeDobrada && selectedStarIndex === -1) {
-                return; // Não pode adicionar estrela se já foi usada
+        function toggleStar(index) {
+            // Se o usuário NÃO pode usar dobrada E não há nenhuma estrela selecionada na tela (tentando criar uma nova)
+            if (!podeDobradaGlobal && selectedStarIndex === -1) {
+                tg.showAlert("Você já utilizou sua estrela nesta rodada e não pode adicionar uma nova.");
+                return;
             }
-            
+
             const stars = document.querySelectorAll('.star-btn');
             
             if (selectedStarIndex === index) {
-                // Clicou na mesma estrela: remove
+                // Desmarca a atual
                 selectedStarIndex = -1;
                 stars[index].classList.remove('active');
             } else {
-                // Clicou em uma estrela diferente: move
+                // Remove a marcação da anterior (se houver)
                 if (selectedStarIndex !== -1) {
                     stars[selectedStarIndex].classList.remove('active');
                 }
+                // Marca a nova
                 selectedStarIndex = index;
                 stars[index].classList.add('active');
             }
@@ -162,14 +164,17 @@
             for (let i = 0; i < gamesData.length; i++) {
                 const h = document.getElementById(`h-${i}`).value;
                 const a = document.getElementById(`a-${i}`).value;
+                
                 if (h === '' || a === '') {
-                    tg.showAlert("Preencha todos os jogos!");
+                    tg.showAlert("Preencha todos os placares!");
                     return;
                 }
+                
                 let line = `${gamesData[i].home} ${h} x ${a} ${gamesData[i].away}`;
                 if (selectedStarIndex === i) line += " PD";
                 res.push(line);
             }
+            
             tg.sendData(res.join('\n'));
             setTimeout(() => tg.close(), 200);
         }
