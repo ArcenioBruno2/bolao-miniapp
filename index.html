@@ -129,13 +129,29 @@
         }
 
         function toggleStar(index, podeDobrada) {
-            if (!podeDobrada && selectedStarIndex !== index) return;
+            // ========================================================================
+            // CORREÇÃO: Permitir trocar a estrela mesmo quando já foi usada (edição)
+            // A lógica antiga bloqueava quando !podeDobrada && selectedStarIndex !== index
+            // Agora permitimos trocar livremente entre jogos
+            // ========================================================================
+            
+            // Se a estrela não está disponível E não há nenhuma estrela selecionada
+            // (ou seja, é um novo palpite e não pode usar dobrada), então bloqueia
+            if (!podeDobrada && selectedStarIndex === -1) {
+                return; // Não pode adicionar estrela se já foi usada
+            }
+            
             const stars = document.querySelectorAll('.star-btn');
+            
             if (selectedStarIndex === index) {
+                // Clicou na mesma estrela: remove
                 selectedStarIndex = -1;
                 stars[index].classList.remove('active');
             } else {
-                if (selectedStarIndex !== -1) stars[selectedStarIndex].classList.remove('active');
+                // Clicou em uma estrela diferente: move
+                if (selectedStarIndex !== -1) {
+                    stars[selectedStarIndex].classList.remove('active');
+                }
                 selectedStarIndex = index;
                 stars[index].classList.add('active');
             }
