@@ -177,26 +177,36 @@
     let persistencia = {};
 
     function init() {
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const dataRaw = urlParams.get('data');
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataRaw = urlParams.get('data');
+        
+        if (dataRaw) {
+            // 1. Decodifica o Base64 para uma string binária
+            const binaryString = atob(dataRaw);
             
-            if (dataRaw) {
-                // Decodificação simplificada para Base64 padrão vindo do Python
-                const jsonString = atob(dataRaw);
-                const decodedData = JSON.parse(decodeURIComponent(escape(jsonString)));
-                
-                processarDados(decodedData); // Agora a função existirá abaixo
-            } else {
-                throw new Error("Nenhum dado recebido na URL");
+            // 2. Converte a string binária para um array de bytes (Uint8Array)
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
             }
-        } catch (e) {
-            console.error(e);
-            document.getElementById('loading-text').innerText = "Erro: " + e.message;
-            document.getElementById('loading-text').style.color = "red";
+            
+            // 3. Usa o TextDecoder para transformar os bytes em UTF-8 real (resolve os acentos)
+            const decoder = new TextDecoder('utf-8');
+            const jsonString = decoder.decode(bytes);
+            
+            // 4. Converte o JSON corrigido para objeto
+            const decodedData = JSON.parse(jsonString);
+            
+            processarDados(decodedData);
+        } else {
+            throw new Error("Nenhum dado recebido na URL");
         }
+    } catch (e) {
+        console.error("Erro na decodificação:", e);
+        document.getElementById('loading-text').innerText = "Erro ao processar acentos: " + e.message;
     }
-
+}
     function processarDados(data) {
         todasRodadas = data.rodadas;
         usuariosData = data.usuarios;
