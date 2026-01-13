@@ -341,7 +341,7 @@
         
         <div class="summary-bar">
             <div class="summary-row">
-                <span class="summary-label">Jogos selecionados:</span>
+                <span class="summary-label">Jogos:</span>
                 <span class="summary-value" id="summary-jogos">0</span>
             </div>
             <div class="summary-row">
@@ -382,53 +382,87 @@
         function init() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
+                const sessionId = urlParams.get('session');
                 const dataRaw = urlParams.get('data');
                 
-                if (!dataRaw) {
+                if (sessionId) {
+                    // Busca dados via API usando o ID da sessao
+                    buscarDadosViaAPI(sessionId);
+                } else if (dataRaw) {
+                    // Compatibilidade com dados codificados em base64 (legado)
+                    processarDados(JSON.parse(atob(dataRaw)));
+                } else {
                     throw new Error("Nenhum dado recebido");
                 }
-
-                const decodedData = JSON.parse(atob(dataRaw));
-                
-                // Processa rodadas e usuarios do backend
-                todasRodadas = decodedData.rodadas || {};
-                usuariosData = decodedData.usuarios || [];
-                
-                // Se houver rodadas, usa a primeira disponivel
-                const rodadasArray = Object.keys(todasRodadas).map(r => parseInt(r)).sort((a, b) => b - a);
-                rodadaNum = rodadasArray.length > 0 ? rodadasArray[0] : 0;
-                
-                // Obtem os jogos da rodada selecionada
-                jogosData = todasRodadas[rodadaNum] || [];
-                
-                // Preenche o select de rodadas
-                preencherSelectRodadas(rodadasArray);
-
-                document.getElementById('rodada-info').innerText = `Rodada ${rodadaNum} - ${jogosData.length} jogos`;
-                
-                // Define data padrão (hoje)
-                const hoje = new Date();
-                document.getElementById('input-data').value = hoje.toISOString().split('T')[0];
-                
-                renderGames();
-                renderUsers();
-                
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('app').style.display = 'block';
-                
-                tg.MainButton.setText("CRIAR RODADA");
-                tg.MainButton.show();
-                tg.MainButton.onClick(submit);
-                
             } catch (e) {
                 document.getElementById('loading').style.display = 'none';
                 document.body.innerHTML = `
                     <div class="error-container">
-                        <h3>❌ Erro ao carregar</h3>
+                        <h3>Erro ao carregar</h3>
                         <small>${e.message}</small>
                     </div>
                 `;
             }
+        }
+        
+        function buscarDadosViaAPI(sessionId) {
+            // Determina a URL da API
+            // Em desenvolvimento: localhost:5000
+            // Em producao: mesmo dominio do bot
+            const apiUrl = `http://localhost:5000/api/mini-app/session/${sessionId}`;
+            
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Erro ao buscar dados: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    processarDados(data);
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    document.getElementById('loading').style.display = 'none';
+                    document.body.innerHTML = `
+                        <div class="error-container">
+                            <h3>Erro ao carregar dados</h3>
+                            <small>${error.message}</small>
+                        </div>
+                    `;
+                });
+        }
+        
+        function processarDados(decodedData) {
+            // Processa rodadas e usuarios do backend
+            todasRodadas = decodedData.rodadas || {};
+            usuariosData = decodedData.usuarios || [];
+            
+            // Se houver rodadas, usa a primeira disponivel
+            const rodadasArray = Object.keys(todasRodadas).map(r => parseInt(r)).sort((a, b) => b - a);
+            rodadaNum = rodadasArray.length > 0 ? rodadasArray[0] : 0;
+            
+            // Obtem os jogos da rodada selecionada
+            jogosData = todasRodadas[rodadaNum] || [];
+            
+            // Preenche o select de rodadas
+            preencherSelectRodadas(rodadasArray);
+
+            document.getElementById('rodada-info').innerText = `Rodada ${rodadaNum} - ${jogosData.length} jogos`;
+            
+            // Define data padrão (hoje)
+            const hoje = new Date();
+            document.getElementById('input-data').value = hoje.toISOString().split('T')[0];
+            
+            renderGames();
+            renderUsers();
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            
+            tg.MainButton.setText("CRIAR RODADA");
+            tg.MainButton.show();
+            tg.MainButton.onClick(submit);
         }
 
         function renderGames() {
@@ -637,7 +671,7 @@
         function submit() {
             // Validações
             if (selectedGames.size === 0) {
-                tg.showAlert("❌ Selecione pelo menos um jogo!");
+                tg.showAlert("Selecione pelo menos um jogo!");
                 return;
             }
             
@@ -645,7 +679,7 @@
             const hora = document.getElementById('input-hora').value;
             
             if (!data || !hora) {
-                tg.showAlert("❌ Defina a data e hora de encerramento!");
+                tg.showAlert("Defina a data e hora de encerramento!");
                 return;
             }
             
