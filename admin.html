@@ -54,7 +54,7 @@
         
         .container {
             padding: 15px;
-            padding-bottom: 140px;
+            padding-bottom: 120px;
         }
         
         .section {
@@ -73,35 +73,6 @@
             margin-bottom: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-        }
-        
-        /* Seletor de Rodada */
-        .rodada-selector {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-        
-        .rodada-chip {
-            padding: 10px 16px;
-            border-radius: 20px;
-            background: var(--tg-theme-secondary-bg-color);
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 2px solid transparent;
-        }
-        
-        .rodada-chip:active {
-            transform: scale(0.95);
-        }
-        
-        .rodada-chip.selected {
-            background: rgba(220, 53, 69, 0.15);
-            border-color: #dc3545;
-            color: #dc3545;
         }
         
         .game-item {
@@ -212,7 +183,7 @@
         }
         
         .user-chip {
-            padding: 10px 14px;
+            padding: 8px 14px;
             border-radius: 20px;
             background: var(--tg-theme-secondary-bg-color);
             font-size: 13px;
@@ -269,10 +240,6 @@
             font-weight: 600;
         }
         
-        .summary-value.highlight {
-            color: var(--success-color);
-        }
-        
         .loading {
             display: flex;
             flex-direction: column;
@@ -305,16 +272,6 @@
             margin-bottom: 10px;
         }
         
-        .no-games {
-            text-align: center;
-            padding: 30px;
-            color: var(--tg-theme-hint-color);
-        }
-        
-        .hidden {
-            display: none !important;
-        }
-        
         /* Tema escuro */
         @media (prefers-color-scheme: dark) {
             :root {
@@ -334,26 +291,28 @@
     
     <div id="app" style="display: none;">
         <div class="header">
-            <h1>⚙️ Configurar Nova Rodada</h1>
-            <small id="header-info">Carregando rodadas...</small>
+            <h1>⚙️ Configurar Rodada</h1>
+            <small id="rodada-info">Rodada --</small>
         </div>
         
         <div class="container">
             <!-- Seleção de Rodada -->
             <div class="section">
-                <div class="section-title">🏆 Selecionar Rodada</div>
-                <div class="rodada-selector" id="rodada-selector"></div>
+                <div class="section-title">🔄 Selecionar Rodada</div>
+                <select class="input-field" id="rodada-select" onchange="mudarRodada()">
+                    <option value="">Carregando rodadas...</option>
+                </select>
             </div>
             
-            <!-- Seleção de Jogos (aparece após selecionar rodada) -->
-            <div class="section hidden" id="section-jogos">
+            <!-- Seleção de Jogos -->
+            <div class="section">
                 <div class="section-title">📋 Selecionar Jogos</div>
                 <span class="select-all-btn" onclick="toggleAllGames()">Selecionar/Desmarcar Todos</span>
                 <div id="games-list"></div>
             </div>
             
             <!-- Configuração de Horário -->
-            <div class="section hidden" id="section-horario">
+            <div class="section">
                 <div class="section-title">⏰ Horário de Encerramento</div>
                 <div class="input-group">
                     <label class="input-label">Data</label>
@@ -366,14 +325,14 @@
             </div>
             
             <!-- Configuração de Trunfo -->
-            <div class="section hidden" id="section-trunfo">
+            <div class="section">
                 <div class="section-title">🎖️ Jogadores com Trunfo</div>
                 <span class="select-all-btn" onclick="toggleAllTrunfos()">Selecionar/Desmarcar Todos</span>
                 <div class="user-chips" id="trunfo-list"></div>
             </div>
             
             <!-- Configuração de Dobrada -->
-            <div class="section hidden" id="section-dobrada">
+            <div class="section">
                 <div class="section-title">⭐ Jogadores com Dobrada (Estrela)</div>
                 <span class="select-all-btn" onclick="toggleAllDobradas()">Selecionar/Desmarcar Todos</span>
                 <div class="user-chips" id="dobrada-list"></div>
@@ -382,16 +341,16 @@
         
         <div class="summary-bar">
             <div class="summary-row">
-                <span class="summary-label">Rodada:</span>
-                <span class="summary-value" id="summary-rodada">Não selecionada</span>
-            </div>
-            <div class="summary-row">
                 <span class="summary-label">Jogos selecionados:</span>
                 <span class="summary-value" id="summary-jogos">0</span>
             </div>
             <div class="summary-row">
-                <span class="summary-label">Trunfos / Dobradas:</span>
-                <span class="summary-value"><span id="summary-trunfos">0</span> / <span id="summary-dobradas">0</span></span>
+                <span class="summary-label">Trunfos:</span>
+                <span class="summary-value" id="summary-trunfos">0</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Dobradas:</span>
+                <span class="summary-value" id="summary-dobradas">0</span>
             </div>
         </div>
     </div>
@@ -412,38 +371,53 @@
         }
 
         // Dados
-        let rodadasData = {};
+        let rodadaNum = 0;
+        let jogosData = [];
         let usuariosData = [];
-        let selectedRodada = null;
+        let todasRodadas = {};
         let selectedGames = new Set();
         let selectedTrunfos = new Set();
         let selectedDobradas = new Set();
 
-        async function init() {
+        function init() {
             try {
-                // Busca dados do servidor Flask via fetch
-                const response = await fetch('http://127.0.0.1:5000/api/admin/data');
-                if (!response.ok) {
-                    throw new Error('Erro ao buscar dados do servidor');
-                }
-                const decodedData = await response.json();
+                const urlParams = new URLSearchParams(window.location.search);
+                const dataRaw = urlParams.get('data');
                 
-                rodadasData = decodedData.rodadas || {};
-                usuariosData = decodedData.usuarios || [];
+                if (!dataRaw) {
+                    throw new Error("Nenhum dado recebido");
+                }
 
-                // Renderiza seletor de rodadas
-                renderRodadaSelector();
-                renderUsers();
+                const decodedData = JSON.parse(atob(dataRaw));
+                
+                // Processa rodadas e usuarios do backend
+                todasRodadas = decodedData.rodadas || {};
+                usuariosData = decodedData.usuarios || [];
+                
+                // Se houver rodadas, usa a primeira disponivel
+                const rodadasArray = Object.keys(todasRodadas).map(r => parseInt(r)).sort((a, b) => b - a);
+                rodadaNum = rodadasArray.length > 0 ? rodadasArray[0] : 0;
+                
+                // Obtem os jogos da rodada selecionada
+                jogosData = todasRodadas[rodadaNum] || [];
+                
+                // Preenche o select de rodadas
+                preencherSelectRodadas(rodadasArray);
+
+                document.getElementById('rodada-info').innerText = `Rodada ${rodadaNum} - ${jogosData.length} jogos`;
                 
                 // Define data padrão (hoje)
                 const hoje = new Date();
                 document.getElementById('input-data').value = hoje.toISOString().split('T')[0];
                 
+                renderGames();
+                renderUsers();
+                
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
                 
-                // Configura MainButton do Telegram (inicialmente oculto)
                 tg.MainButton.setText("CRIAR RODADA");
+                tg.MainButton.show();
                 tg.MainButton.onClick(submit);
                 
             } catch (e) {
@@ -457,70 +431,14 @@
             }
         }
 
-        function renderRodadaSelector() {
-            const selector = document.getElementById('rodada-selector');
-            selector.innerHTML = '';
-            
-            const rodadas = Object.keys(rodadasData).map(Number).sort((a, b) => a - b);
-            
-            if (rodadas.length === 0) {
-                selector.innerHTML = '<span style="color: var(--tg-theme-hint-color);">Nenhuma rodada disponível</span>';
-                return;
-            }
-            
-            rodadas.forEach(numRodada => {
-                const chip = document.createElement('span');
-                chip.className = 'rodada-chip';
-                chip.dataset.rodada = numRodada;
-                chip.innerText = `Rodada ${numRodada}`;
-                chip.onclick = () => selectRodada(numRodada);
-                selector.appendChild(chip);
-            });
-        }
-
-        function selectRodada(numRodada) {
-            // Atualiza seleção visual
-            document.querySelectorAll('.rodada-chip').forEach(chip => {
-                chip.classList.remove('selected');
-                if (parseInt(chip.dataset.rodada) === numRodada) {
-                    chip.classList.add('selected');
-                }
-            });
-            
-            selectedRodada = numRodada;
-            selectedGames.clear();
-            
-            // Atualiza header
-            document.getElementById('header-info').innerText = `Rodada ${numRodada} selecionada`;
-            
-            // Mostra seções ocultas
-            document.getElementById('section-jogos').classList.remove('hidden');
-            document.getElementById('section-horario').classList.remove('hidden');
-            document.getElementById('section-trunfo').classList.remove('hidden');
-            document.getElementById('section-dobrada').classList.remove('hidden');
-            
-            // Renderiza jogos da rodada
-            renderGames();
-            
-            updateSummary();
-            hapticFeedback();
-        }
-
         function renderGames() {
             const list = document.getElementById('games-list');
             list.innerHTML = '';
             
-            const jogos = rodadasData[selectedRodada] || [];
-            
-            if (jogos.length === 0) {
-                list.innerHTML = '<div class="no-games">Nenhum jogo nesta rodada</div>';
-                return;
-            }
-            
-            jogos.forEach((jogo, index) => {
+            jogosData.forEach((jogo, index) => {
                 const item = document.createElement('div');
                 item.className = 'game-item';
-                item.dataset.id = jogo.id;
+                item.dataset.id = jogo.id || index;
                 
                 const dataStr = jogo.data ? formatDate(jogo.data) : '';
                 const horaStr = jogo.hora || '';
@@ -528,14 +446,16 @@
                 item.innerHTML = `
                     <div class="game-checkbox"></div>
                     <div class="game-info">
-                        <div class="game-teams">${jogo.home} x ${jogo.away}</div>
+                        <div class="game-teams">${jogo.home || jogo.time_casa} x ${jogo.away || jogo.time_fora}</div>
                         <div class="game-date">${dataStr} ${horaStr}</div>
                     </div>
                 `;
                 
-                item.onclick = () => toggleGame(item, jogo.id);
+                item.onclick = () => toggleGame(item, jogo.id || index);
                 list.appendChild(item);
             });
+            
+            updateSummary();
         }
 
         function renderUsers() {
@@ -545,31 +465,60 @@
             trunfoList.innerHTML = '';
             dobradaList.innerHTML = '';
             
+            // Se não há usuários, mostra mensagem
             if (usuariosData.length === 0) {
                 trunfoList.innerHTML = '<span style="color: var(--tg-theme-hint-color); font-size: 13px;">Nenhum usuário registrado</span>';
                 dobradaList.innerHTML = '<span style="color: var(--tg-theme-hint-color); font-size: 13px;">Nenhum usuário registrado</span>';
                 return;
             }
             
-            usuariosData.forEach(user => {
+            usuariosData.forEach(userId => {
                 // Chip para Trunfo
                 const trunfoChip = document.createElement('span');
                 trunfoChip.className = 'user-chip';
-                trunfoChip.dataset.id = user.id;
-                trunfoChip.innerText = user.nome;
-                trunfoChip.onclick = () => toggleTrunfo(trunfoChip, user.id);
+                trunfoChip.dataset.id = userId;
+                trunfoChip.innerText = `ID: ${userId}`;
+                trunfoChip.onclick = () => toggleTrunfo(trunfoChip, userId);
                 trunfoList.appendChild(trunfoChip);
                 
                 // Chip para Dobrada
                 const dobradaChip = document.createElement('span');
                 dobradaChip.className = 'user-chip';
-                dobradaChip.dataset.id = user.id;
-                dobradaChip.innerText = user.nome;
-                dobradaChip.onclick = () => toggleDobrada(dobradaChip, user.id);
+                dobradaChip.dataset.id = userId;
+                dobradaChip.innerText = `ID: ${userId}`;
+                dobradaChip.onclick = () => toggleDobrada(dobradaChip, userId);
                 dobradaList.appendChild(dobradaChip);
             });
         }
 
+        function preencherSelectRodadas(rodadasArray) {
+            const select = document.getElementById('rodada-select');
+            select.innerHTML = '';
+            
+            rodadasArray.forEach(rodada => {
+                const option = document.createElement('option');
+                option.value = rodada;
+                option.textContent = `Rodada ${rodada}`;
+                if (rodada === rodadaNum) option.selected = true;
+                select.appendChild(option);
+            });
+        }
+        
+        function mudarRodada() {
+            const select = document.getElementById('rodada-select');
+            const novaRodada = parseInt(select.value);
+            
+            if (novaRodada === rodadaNum) return;
+            
+            rodadaNum = novaRodada;
+            jogosData = todasRodadas[rodadaNum] || [];
+            selectedGames.clear();
+            
+            document.getElementById('rodada-info').innerText = `Rodada ${rodadaNum} - ${jogosData.length} jogos`;
+            renderGames();
+            hapticFeedback();
+        }
+        
         function formatDate(dateStr) {
             if (!dateStr) return '';
             try {
@@ -617,12 +566,11 @@
         }
 
         function toggleAllGames() {
-            const jogos = rodadasData[selectedRodada] || [];
             const items = document.querySelectorAll('#games-list .game-item');
-            const allSelected = selectedGames.size === jogos.length;
+            const allSelected = selectedGames.size === jogosData.length;
             
             items.forEach((item, index) => {
-                const id = jogos[index].id;
+                const id = jogosData[index].id || index;
                 if (allSelected) {
                     selectedGames.delete(id);
                     item.classList.remove('selected');
@@ -675,17 +623,9 @@
         }
 
         function updateSummary() {
-            document.getElementById('summary-rodada').innerText = selectedRodada ? `Rodada ${selectedRodada}` : 'Não selecionada';
             document.getElementById('summary-jogos').innerText = selectedGames.size;
             document.getElementById('summary-trunfos').innerText = selectedTrunfos.size;
             document.getElementById('summary-dobradas').innerText = selectedDobradas.size;
-            
-            // Mostra/oculta MainButton baseado na seleção
-            if (selectedRodada && selectedGames.size > 0) {
-                tg.MainButton.show();
-            } else {
-                tg.MainButton.hide();
-            }
         }
 
         function hapticFeedback() {
@@ -696,13 +636,8 @@
 
         function submit() {
             // Validações
-            if (!selectedRodada) {
-                tg.showAlert("Selecione uma rodada!");
-                return;
-            }
-            
             if (selectedGames.size === 0) {
-                tg.showAlert("Selecione pelo menos um jogo!");
+                tg.showAlert("❌ Selecione pelo menos um jogo!");
                 return;
             }
             
@@ -710,14 +645,14 @@
             const hora = document.getElementById('input-hora').value;
             
             if (!data || !hora) {
-                tg.showAlert("Defina a data e hora de encerramento!");
+                tg.showAlert("❌ Defina a data e hora de encerramento!");
                 return;
             }
             
             // Monta objeto de configuração
             const config = {
                 config: {
-                    rodada: selectedRodada,
+                    rodada: rodadaNum,
                     jogos: Array.from(selectedGames),
                     hora_encerramento: `${data} ${hora}`,
                     trunfos: Array.from(selectedTrunfos),
@@ -730,10 +665,9 @@
                 tg.HapticFeedback.notificationOccurred('success');
             }
             
-            // Envia dados via sendData
+            // Envia dados
             tg.sendData(JSON.stringify(config));
             
-            // Fecha após pequeno delay
             setTimeout(() => tg.close(), 300);
         }
 
