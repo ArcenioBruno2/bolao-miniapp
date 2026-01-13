@@ -382,17 +382,19 @@
         function init() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
-                const sessionId = urlParams.get('session');
                 const dataRaw = urlParams.get('data');
+                const sessionId = urlParams.get('session');
                 
-                if (sessionId) {
-                    // Busca dados via API usando o ID da sessao
+                if (dataRaw) {
+                    // Prioridade: Dados diretos na URL (Base64)
+                    // Usamos decodeURIComponent para garantir que caracteres especiais na URL não quebrem o atob
+                    const decodedData = JSON.parse(atob(dataRaw));
+                    processarDados(decodedData);
+                } else if (sessionId) {
+                    // Busca dados via API (fallback)
                     buscarDadosViaAPI(sessionId);
-                } else if (dataRaw) {
-                    // Compatibilidade com dados codificados em base64 (legado)
-                    processarDados(JSON.parse(atob(dataRaw)));
                 } else {
-                    throw new Error("Nenhum dado recebido");
+                    throw new Error("Nenhum dado recebido na URL");
                 }
             } catch (e) {
                 document.getElementById('loading').style.display = 'none';
