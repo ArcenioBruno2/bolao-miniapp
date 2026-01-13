@@ -663,13 +663,56 @@
         }
 
         function submit() {
-            const data = document.getElementById('input-data').value;
-            const hora = document.getElementById('input-hora').value;
+    const data = document.getElementById('input-data').value;
+    const hora = document.getElementById('input-hora').value;
+    
+    if (!data || !hora) {
+        tg.showAlert("Defina a data e hora de encerramento!");
+        return;
+    }
+
+    const configFinal = {
+        config_multipla: {
+            hora_encerramento: `${data} ${hora}`,
+            rodadas: {}
+        }
+    };
+
+    let totalJogos = 0;
+    for (const rId in persistencia) {
+        const p = persistencia[rId];
+        if (p.games.size > 0) {
+            // Buscamos os nomes dos jogos selecionados para o Bot postar
+            const nomesJogos = [];
+            const listaJogosDaRodada = todasRodadas[rId];
             
-            if (!data || !hora) {
-                tg.showAlert("Defina a data e hora de encerramento!");
-                return;
-            }
+            p.games.forEach(gId => {
+                // gId pode ser o index ou o id vindo do excel
+                const jogoEncontrado = listaJogosDaRodada.find((j, index) => (j.id || index) == gId);
+                if (jogoEncontrado) {
+                    const casa = jogoEncontrado.home || jogoEncontrado.time_casa;
+                    const fora = jogoEncontrado.away || jogoEncontrado.time_fora;
+                    nomesJogos.push(`${casa} x ${fora}`);
+                }
+            });
+
+            configFinal.config_multipla.rodadas[rId] = {
+                jogos: Array.from(p.games),
+                jogos_nomes: nomesJogos, // O bot Python usará isso para a Mensagem 1
+                trunfos_ids: Array.from(p.trunfos), // O bot Python usará para a Mensagem 2
+                dobrada_usada_ids: Array.from(p.dobradas) // O bot Python usará para a Mensagem 3
+            };
+            totalJogos += p.games.size;
+        }
+    }
+    
+    if (totalJogos === 0) {
+        tg.showAlert("Selecione pelo menos um jogo!");
+        return;
+    }
+    
+    tg.sendData(JSON.stringify(configFinal));
+}
 
             // Monta o objeto final com todas as rodadas configuradas
             const configFinal = {
