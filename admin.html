@@ -335,7 +335,7 @@
     <div id="app" style="display: none;">
         <div class="header">
             <h1>⚙️ Configurar Nova Rodada</h1>
-            <small id="header-info">Selecione uma rodada para começar</small>
+            <small id="header-info">Carregando rodadas...</small>
         </div>
         
         <div class="container">
@@ -419,27 +419,14 @@
         let selectedTrunfos = new Set();
         let selectedDobradas = new Set();
 
-        function decompressData(dataRaw) {
+        async function init() {
             try {
-                // Decodifica base64
-                const jsonString = atob(dataRaw);
-                // Parseia JSON
-                return JSON.parse(jsonString);
-            } catch (e) {
-                throw new Error("Erro ao decodificar dados: " + e.message);
-            }
-        }
-
-        function init() {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const dataRaw = urlParams.get('data');
-                
-                if (!dataRaw) {
-                    throw new Error("Nenhum dado recebido");
+                // Busca dados do servidor Flask via fetch
+                const response = await fetch('http://127.0.0.1:5000/api/admin/data');
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar dados do servidor');
                 }
-
-                const decodedData = decompressData(dataRaw);
+                const decodedData = await response.json();
                 
                 rodadasData = decodedData.rodadas || {};
                 usuariosData = decodedData.usuarios || [];
