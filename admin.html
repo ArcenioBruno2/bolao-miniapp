@@ -172,45 +172,29 @@
     let persistencia = {};
 
     function init() {
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const dataRaw = urlParams.get('data');
-            
-            if (!dataRaw) {
-                alert("Erro: Nenhum dado foi passado na URL.");
-                return;
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const dataRaw = urlParams.get('data');
+                
+                if (dataRaw) {
+                    // DECODIFICAÇÃO SEGURA PARA ACENTOS (UTF-8)
+                    const decodedData = JSON.parse(decodeURIComponent(escape(atob(dataRaw.replace(/-/g, '+').replace(/_/g, '/')))));
+                    processarDados(decodedData);
+                } else {
+                    throw new Error("Nenhum dado recebido na URL");
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('loading').style.display = 'none';
+                document.body.innerHTML = `
+                    <div class="error-container">
+                        <h3>Erro ao carregar</h3>
+                        <p>Verifique se os dados enviados pelo bot estão corretos.</p>
+                        <small style="color:red">${e.message}</small>
+                    </div>
+                `;
             }
-
-            // Decodificação segura para Base64 com caracteres especiais
-            const decodedData = JSON.parse(decodeURIComponent(escape(atob(dataRaw.replace(/-/g, '+').replace(/_/g, '/')))));
-            
-            todasRodadas = decodedData.rodadas || {};
-            usuariosData = decodedData.usuarios || {}; // Garante que seja objeto ou array
-            
-            const rodadasArray = Object.keys(todasRodadas).map(Number).sort((a,b) => a-b);
-            
-            if (rodadasArray.length === 0) throw new Error("Lista de rodadas vazia.");
-
-            rodadasArray.forEach(r => {
-                persistencia[r] = { games: new Set(), trunfos: new Set(), dobradas: new Set() };
-            });
-
-            rodadaNum = rodadasArray[0];
-            preencherSelect(rodadasArray);
-            renderTudo();
-            
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-
-            tg.MainButton.setText("CRIAR RODADA(S)");
-            tg.MainButton.show();
-            tg.MainButton.onClick(submit);
-
-        } catch (e) {
-            alert("ERRO NO INIT: " + e.message);
-            document.getElementById('loading-text').innerText = "Erro crítico: " + e.message;
         }
-    }
 
         function preencherSelect(array) {
             const sel = document.getElementById('rodada-select');
