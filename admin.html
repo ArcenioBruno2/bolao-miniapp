@@ -380,43 +380,34 @@
         let persistencia = {};
 
        function init() {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const dataRaw = urlParams.get('data');
-                
-                if (dataRaw) {
-                    // --- CORREÇÃO DE ACENTOS AQUI ---
-                    // 1. Decodifica o base64 para uma string binária
-                    const binaryString = window.atob(dataRaw);
-                    // 2. Transforma em um array de bytes (Uint8Array)
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
-                    }
-                    // 3. Decodifica os bytes como UTF-8 real
-                    const decoder = new TextDecoder('utf-8');
-                    const decodedText = decoder.decode(bytes);
-                    
-                    // 4. Agora faz o parse do JSON
-                    const decodedData = JSON.parse(decodedText);
-                    // --------------------------------
-                    
-                    processarDados(decodedData);
-                } else {
-                    throw new Error("Nenhum dado recebido na URL");
-                }
-            } catch (e) {
-                console.error(e);
-                document.getElementById('loading').style.display = 'none';
-                document.body.innerHTML = `
-                    <div class="error-container">
-                        <h3>Erro ao carregar</h3>
-                        <p>Os nomes podem conter caracteres inválidos ou o link expirou.</p>
-                        <small>${e.message}</small>
-                    </div>
-                `;
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataRaw = urlParams.get('data');
+        
+        if (dataRaw) {
+            // CORREÇÃO AQUI: Decodificação compatível com acentos (UTF-8)
+            const binaryString = atob(dataRaw);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
             }
+            const decodedData = JSON.parse(new TextDecoder().decode(bytes));
+            
+            processarDados(decodedData);
+        } else {
+            throw new Error("Nenhum dado recebido na URL");
         }
+    } catch (e) {
+        console.error(e);
+        document.getElementById('loading').style.display = 'none';
+        document.body.innerHTML = `
+            <div class="error-container">
+                <h3>Erro ao carregar</h3>
+                <small>${e.message}</small>
+            </div>
+        `;
+    }
+}
         
         function processarDados(decodedData) {
             todasRodadas = decodedData.rodadas || {};
