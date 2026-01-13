@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin - Bolão 42</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
     <style>
         :root {
             --tg-theme-bg-color: #ffffff;
@@ -423,25 +422,9 @@
         function decompressData(dataRaw) {
             try {
                 // Decodifica base64
-                const binaryString = atob(dataRaw);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                
-                // Tenta descomprimir com pako
-                if (typeof pako !== 'undefined') {
-                    try {
-                        const decompressed = pako.inflate(bytes, { to: 'string' });
-                        return JSON.parse(decompressed);
-                    } catch (e) {
-                        // Se falhar, tenta parsear como JSON direto
-                        return JSON.parse(binaryString);
-                    }
-                } else {
-                    // Sem pako, tenta parsear direto
-                    return JSON.parse(binaryString);
-                }
+                const jsonString = atob(dataRaw);
+                // Parseia JSON
+                return JSON.parse(jsonString);
             } catch (e) {
                 throw new Error("Erro ao decodificar dados: " + e.message);
             }
