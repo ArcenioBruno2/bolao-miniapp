@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin - Bolão 42</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
     <style>
         :root {
             --tg-theme-bg-color: #ffffff;
@@ -412,12 +413,39 @@
         }
 
         // Dados
-        let rodadasData = {};  // { numero_rodada: [jogos] }
-        let usuariosData = []; // [{ id, nome }]
+        let rodadasData = {};
+        let usuariosData = [];
         let selectedRodada = null;
         let selectedGames = new Set();
         let selectedTrunfos = new Set();
         let selectedDobradas = new Set();
+
+        function decompressData(dataRaw) {
+            try {
+                // Decodifica base64
+                const binaryString = atob(dataRaw);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                
+                // Tenta descomprimir com pako
+                if (typeof pako !== 'undefined') {
+                    try {
+                        const decompressed = pako.inflate(bytes, { to: 'string' });
+                        return JSON.parse(decompressed);
+                    } catch (e) {
+                        // Se falhar, tenta parsear como JSON direto
+                        return JSON.parse(binaryString);
+                    }
+                } else {
+                    // Sem pako, tenta parsear direto
+                    return JSON.parse(binaryString);
+                }
+            } catch (e) {
+                throw new Error("Erro ao decodificar dados: " + e.message);
+            }
+        }
 
         function init() {
             try {
@@ -428,7 +456,7 @@
                     throw new Error("Nenhum dado recebido");
                 }
 
-                const decodedData = JSON.parse(atob(dataRaw));
+                const decodedData = decompressData(dataRaw);
                 
                 rodadasData = decodedData.rodadas || {};
                 usuariosData = decodedData.usuarios || [];
@@ -447,7 +475,6 @@
                 // Configura MainButton do Telegram (inicialmente oculto)
                 tg.MainButton.setText("CRIAR RODADA");
                 tg.MainButton.onClick(submit);
-                // Não mostra ainda, só após selecionar rodada e jogos
                 
             } catch (e) {
                 document.getElementById('loading').style.display = 'none';
@@ -555,19 +582,19 @@
             }
             
             usuariosData.forEach(user => {
-                // Chip para Trunfo - MOSTRA O NOME
+                // Chip para Trunfo
                 const trunfoChip = document.createElement('span');
                 trunfoChip.className = 'user-chip';
                 trunfoChip.dataset.id = user.id;
-                trunfoChip.innerText = user.nome;  // USA O NOME, NÃO O ID
+                trunfoChip.innerText = user.nome;
                 trunfoChip.onclick = () => toggleTrunfo(trunfoChip, user.id);
                 trunfoList.appendChild(trunfoChip);
                 
-                // Chip para Dobrada - MOSTRA O NOME
+                // Chip para Dobrada
                 const dobradaChip = document.createElement('span');
                 dobradaChip.className = 'user-chip';
                 dobradaChip.dataset.id = user.id;
-                dobradaChip.innerText = user.nome;  // USA O NOME, NÃO O ID
+                dobradaChip.innerText = user.nome;
                 dobradaChip.onclick = () => toggleDobrada(dobradaChip, user.id);
                 dobradaList.appendChild(dobradaChip);
             });
@@ -700,12 +727,12 @@
         function submit() {
             // Validações
             if (!selectedRodada) {
-                tg.showAlert("❌ Selecione uma rodada!");
+                tg.showAlert("Selecione uma rodada!");
                 return;
             }
             
             if (selectedGames.size === 0) {
-                tg.showAlert("❌ Selecione pelo menos um jogo!");
+                tg.showAlert("Selecione pelo menos um jogo!");
                 return;
             }
             
@@ -713,7 +740,7 @@
             const hora = document.getElementById('input-hora').value;
             
             if (!data || !hora) {
-                tg.showAlert("❌ Defina a data e hora de encerramento!");
+                tg.showAlert("Defina a data e hora de encerramento!");
                 return;
             }
             
@@ -733,7 +760,7 @@
                 tg.HapticFeedback.notificationOccurred('success');
             }
             
-            // Envia dados via sendData (funciona com MainButton)
+            // Envia dados via sendData
             tg.sendData(JSON.stringify(config));
             
             // Fecha após pequeno delay
