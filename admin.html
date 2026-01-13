@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin - Bolão 42</title>
+    <title>Bolão 42</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -13,185 +13,167 @@
             --tg-theme-button-text-color: #ffffff;
             --tg-theme-secondary-bg-color: #efeff3;
             --tg-theme-hint-color: #999999;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
-            --danger-color: #dc3545;
         }
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
-            padding: 16px;
-            padding-bottom: 80px;
+            margin: 0; padding: 0;
+            user-select: none; overflow-x: hidden;
         }
-
-        .section-title { font-size: 14px; font-weight: 600; color: var(--tg-theme-button-color); text-transform: uppercase; margin: 20px 0 8px 4px; }
-        
-        .card { background: var(--tg-theme-secondary-bg-color); border-radius: 12px; padding: 12px; margin-bottom: 16px; }
-
-        .dt-input {
-            width: 100%; padding: 12px; border: none; border-radius: 8px; margin-bottom: 8px;
-            background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); font-size: 16px;
+        .header {
+            padding: 15px; background-color: var(--tg-theme-secondary-bg-color);
+            border-bottom: 1px solid rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100;
         }
-
-        .game-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .game-row:last-child { border: none; }
-        .game-info { flex: 1; font-size: 15px; }
-
-        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-        .chip {
-            padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500;
-            background: var(--tg-theme-bg-color); border: 1px solid var(--tg-theme-button-color);
-            color: var(--tg-theme-button-color); cursor: pointer; transition: 0.2s;
+        .container { padding: 10px; padding-bottom: 100px; }
+        .game-card {
+            background-color: var(--tg-theme-bg-color); border-radius: 12px;
+            padding: 15px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: space-between;
+            border: 1px solid rgba(0,0,0,0.05);
         }
-        .chip.selected { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); }
-        .chip.disabled { opacity: 0.5; border-color: var(--tg-theme-hint-color); color: var(--tg-theme-hint-color); cursor: not-allowed; }
-
-        .btn-main {
-            position: fixed; bottom: 16px; left: 16px; right: 16px;
-            padding: 16px; background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color);
-            border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
+        .teams { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+        .team-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .team-name { font-size: 15px; font-weight: 500; flex: 1; }
+        .score-input {
+            width: 45px; height: 35px; border-radius: 8px;
+            border: 1px solid var(--tg-theme-hint-color);
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color); text-align: center;
+            font-size: 18px; font-weight: bold; outline: none;
         }
-
-        /* Toggle Switch */
-        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--tg-theme-button-color); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        .star-btn {
+            margin-left: 15px; font-size: 28px; cursor: pointer;
+            color: var(--tg-theme-hint-color); transition: transform 0.1s;
+        }
+        .star-btn.active { color: #FFD700; }
     </style>
 </head>
 <body>
-
-    <div class="section-title">Prazo Global de Encerramento</div>
-    <div class="card">
-        <input type="date" id="input-data" class="dt-input">
-        <input type="time" id="input-hora" class="dt-input">
+    <div class="header">
+        <h1 id="rodada-title">Carregando...</h1>
+        <div id="info-bar" style="font-size: 12px; color: var(--tg-theme-hint-color);">
+            <span id="info-horario"></span> | <span id="info-dobrada"></span>
+        </div>
     </div>
-
-    <div id="container-rodadas"></div>
-
-    <button class="btn-main" onclick="submit()">CRIAR RODADA(S)</button>
+    <div class="container" id="games-list"></div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
-        let rodadasData = {};
-        let usuariosData = [];
-        let configuracao = {};
+        tg.ready();
+
+        let gamesData = [];
+        let selectedStarIndex = -1;
+        let podeDobradaGlobal = false;
+        let tinhaEstrelaNoInicio = false; // NOVA TRAVA
 
         function init() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const raw = urlParams.get('data');
-            
-            if (!raw) {
-                document.body.innerHTML = "<h3>Erro: Dados não recebidos</h3>";
-                return;
-            }
-
             try {
-                const decoded = JSON.parse(atob(raw));
-                rodadasData = decoded.rodadas;
-                usuariosData = decoded.usuarios;
-                render();
-            } catch (e) {
-                tg.showAlert("Erro ao processar dados da URL.");
-            }
-        }
+                const urlParams = new URLSearchParams(window.location.search);
+                const dataRaw = urlParams.get('data');
+                if (!dataRaw) throw new Error("Sem dados");
 
-        function render() {
-            const container = document.getElementById('container-rodadas');
-            
-            for (const rNum in rodadasData) {
-                configuracao[rNum] = { jogos: [], dobradas: [] };
+                const decodedData = JSON.parse(atob(dataRaw));
                 
-                const rodadaSection = document.createElement('div');
-                rodadaSection.innerHTML = `<div class="section-title">Rodada ${rNum}</div>`;
-                
-                // Card de Jogos
-                const cardJogos = document.createElement('div');
-                cardJogos.className = 'card';
-                rodadasData[rNum].forEach(jogo => {
-                    const row = document.createElement('div');
-                    row.className = 'game-row';
-                    row.innerHTML = `
-                        <div class="game-info">${jogo.home} x ${jogo.away}</div>
-                        <label class="switch">
-                            <input type="checkbox" checked onchange="toggleJogo('${rNum}', '${jogo.id}', this.checked)">
-                            <span class="slider"></span>
-                        </label>
-                    `;
-                    cardJogos.appendChild(row);
-                    configuracao[rNum].jogos.push(jogo.id);
-                });
-                rodadaSection.appendChild(cardJogos);
+                const rodada = decodedData.r || decodedData.rodada;
+                const horario = decodedData.h || decodedData.horario;
+                podeDobradaGlobal = decodedData.d !== undefined ? decodedData.d : decodedData.pode_dobrada;
+                gamesData = decodedData.j || decodedData.jogos;
 
-                // Card de Estrelas (Dobradas)
-                const labelEstrela = document.createElement('div');
-                labelEstrela.className = 'section-title';
-                labelEstrela.innerText = `Usuários c/ Estrela na Rd ${rNum}`;
-                rodadaSection.appendChild(labelEstrela);
-
-                const cardUsers = document.createElement('div');
-                cardUsers.className = 'card chips-container';
-                
-                usuariosData.forEach(user => {
-                    const chip = document.createElement('div');
-                    // ja_usou_estrela == 0 significa que ele ainda tem a estrela disponível
-                    const temDisponivel = user.ja_usou_estrela === 0;
-                    
-                    chip.className = `chip ${temDisponivel ? 'selected' : 'disabled'}`;
-                    chip.innerText = user.nome;
-                    
-                    if (temDisponivel) {
-                        configuracao[rNum].dobradas.push(user.id);
-                        chip.onclick = () => {
-                            chip.classList.toggle('selected');
-                            toggleEstrela(rNum, user.id);
-                        };
+                // Verifica se já veio alguma estrela marcada originalmente
+                gamesData.forEach((game, index) => {
+                    if (game.is_pd) {
+                        selectedStarIndex = index;
+                        tinhaEstrelaNoInicio = true; // Se ele já tinha, ele pode editar
                     }
-                    cardUsers.appendChild(chip);
                 });
-                rodadaSection.appendChild(cardUsers);
-                container.appendChild(rodadaSection);
+
+                document.getElementById('rodada-title').innerText = `Rodada ${rodada}`;
+                document.getElementById('info-horario').innerText = `Fecha às ${horario}`;
+                
+                // Texto informativo
+                const statusEstrela = (podeDobradaGlobal || tinhaEstrelaNoInicio) ? "Estrela disponível" : "Estrela indisponível";
+                document.getElementById('info-dobrada').innerText = statusEstrela;
+                
+                renderGames();
+            } catch (e) {
+                document.body.innerHTML = `<div style="padding:20px;text-align:center;"><h3>Erro ao carregar</h3><small>${e.message}</small></div>`;
             }
         }
 
-        function toggleJogo(rNum, id, isChecked) {
-            if (isChecked) configuracao[rNum].jogos.push(id);
-            else configuracao[rNum].jogos = configuracao[rNum].jogos.filter(i => i !== id);
+        function renderGames() {
+            const list = document.getElementById('games-list');
+            list.innerHTML = '';
+
+            gamesData.forEach((game, index) => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                const isStarActive = selectedStarIndex === index;
+
+                card.innerHTML = `
+                    <div class="teams">
+                        <div class="team-row">
+                            <span class="team-name">${game.home}</span>
+                            <input type="number" class="score-input" id="h-${index}" inputmode="numeric" value="${game.home_score !== undefined ? game.home_score : ''}">
+                        </div>
+                        <div class="team-row">
+                            <span class="team-name">${game.away}</span>
+                            <input type="number" class="score-input" id="a-${index}" inputmode="numeric" value="${game.away_score !== undefined ? game.away_score : ''}">
+                        </div>
+                    </div>
+                    <div class="star-btn ${isStarActive ? 'active' : ''}" onclick="toggleStar(${index})">★</div>
+                `;
+                list.appendChild(card);
+            });
+
+            tg.MainButton.setText("ENVIAR PALPITES").show().onClick(send);
         }
 
-        function toggleEstrela(rNum, userId) {
-            const index = configuracao[rNum].dobradas.indexOf(userId);
-            if (index > -1) configuracao[rNum].dobradas.splice(index, 1);
-            else configuracao[rNum].dobradas.push(userId);
-        }
-
-        function submit() {
-            const data = document.getElementById('input-data').value;
-            const hora = document.getElementById('input-hora').value;
-            
-            if (!data || !hora) {
-                tg.showAlert("⚠️ Defina a data e hora de encerramento!");
+        function toggleStar(index) {
+            // LÓGICA CORRIGIDA:
+            // Permite clicar se:
+            // 1. O servidor disse que pode (podeDobradaGlobal)
+            // 2. OU se o usuário já entrou na tela com uma estrela (tinhaEstrelaNoInicio)
+            if (!podeDobradaGlobal && !tinhaEstrelaNoInicio) {
+                tg.showAlert("Você não possui estrela disponível para esta rodada.");
                 return;
             }
 
-            const payload = {
-                config_multipla: {
-                    hora_encerramento: `${data} ${hora}`,
-                    rodadas: configuracao
+            const stars = document.querySelectorAll('.star-btn');
+            
+            if (selectedStarIndex === index) {
+                // Desmarca
+                selectedStarIndex = -1;
+                stars[index].classList.remove('active');
+            } else {
+                // Remove anterior e marca nova
+                if (selectedStarIndex !== -1) {
+                    stars[selectedStarIndex].classList.remove('active');
                 }
-            };
+                selectedStarIndex = index;
+                stars[index].classList.add('active');
+            }
+        }
 
-            tg.sendData(JSON.stringify(payload));
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            setTimeout(() => tg.close(), 300);
+        function send() {
+            const res = [];
+            for (let i = 0; i < gamesData.length; i++) {
+                const h = document.getElementById(`h-${i}`).value;
+                const a = document.getElementById(`a-${i}`).value;
+                
+                if (h === '' || a === '') {
+                    tg.showAlert("Preencha todos os placares!");
+                    return;
+                }
+                
+                let line = `${gamesData[i].home} ${h} x ${a} ${gamesData[i].away}`;
+                if (selectedStarIndex === i) line += " PD";
+                res.push(line);
+            }
+            
+            tg.sendData(res.join('\n'));
+            setTimeout(() => tg.close(), 200);
         }
 
         init();
