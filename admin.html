@@ -18,640 +18,159 @@
             --danger-color: #dc3545;
         }
         
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
-            user-select: none;
-            overflow-x: hidden;
-            min-height: 100vh;
+            padding: 16px;
+            padding-bottom: 80px;
         }
+
+        .section-title { font-size: 14px; font-weight: 600; color: var(--tg-theme-button-color); text-transform: uppercase; margin: 20px 0 8px 4px; }
         
-        .header {
-            padding: 15px;
-            background: linear-gradient(135deg, #dc3545, #c82333);
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        .card { background: var(--tg-theme-secondary-bg-color); border-radius: 12px; padding: 12px; margin-bottom: 16px; }
+
+        .dt-input {
+            width: 100%; padding: 12px; border: none; border-radius: 8px; margin-bottom: 8px;
+            background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); font-size: 16px;
         }
-        
-        .header h1 {
-            font-size: 18px;
-            margin-bottom: 5px;
+
+        .game-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .game-row:last-child { border: none; }
+        .game-info { flex: 1; font-size: 15px; }
+
+        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .chip {
+            padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500;
+            background: var(--tg-theme-bg-color); border: 1px solid var(--tg-theme-button-color);
+            color: var(--tg-theme-button-color); cursor: pointer; transition: 0.2s;
         }
-        
-        .header small {
-            opacity: 0.9;
+        .chip.selected { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); }
+        .chip.disabled { opacity: 0.5; border-color: var(--tg-theme-hint-color); color: var(--tg-theme-hint-color); cursor: not-allowed; }
+
+        .btn-main {
+            position: fixed; bottom: 16px; left: 16px; right: 16px;
+            padding: 16px; background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color);
+            border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
         }
-        
-        .container {
-            padding: 15px;
-            padding-bottom: 120px;
-        }
-        
-        .section {
-            background: var(--tg-theme-bg-color);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border: 1px solid rgba(0,0,0,0.05);
-        }
-        
-        .section-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--tg-theme-hint-color);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .game-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            margin-bottom: 8px;
-            background: var(--tg-theme-secondary-bg-color);
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .game-item:last-child {
-            margin-bottom: 0;
-        }
-        
-        .game-item:active {
-            transform: scale(0.98);
-        }
-        
-        .game-item.selected {
-            background: rgba(40, 167, 69, 0.15);
-            border: 2px solid var(--success-color);
-        }
-        
-        .game-checkbox {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
-            border: 2px solid var(--tg-theme-hint-color);
-            margin-right: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            flex-shrink: 0;
-        }
-        
-        .game-item.selected .game-checkbox {
-            background: var(--success-color);
-            border-color: var(--success-color);
-        }
-        
-        .game-checkbox::after {
-            content: '✓';
-            color: white;
-            font-weight: bold;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        .game-item.selected .game-checkbox::after {
-            opacity: 1;
-        }
-        
-        .game-info {
-            flex: 1;
-        }
-        
-        .game-teams {
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .game-date {
-            font-size: 12px;
-            color: var(--tg-theme-hint-color);
-            margin-top: 3px;
-        }
-        
-        .input-group {
-            margin-bottom: 15px;
-        }
-        
-        .input-group:last-child {
-            margin-bottom: 0;
-        }
-        
-        .input-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            margin-bottom: 6px;
-            color: var(--tg-theme-text-color);
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: 2px solid var(--tg-theme-secondary-bg-color);
-            background: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-text-color);
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        
-        .input-field:focus {
-            border-color: var(--tg-theme-button-color);
-        }
-        
-        .user-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
-        .user-chip {
-            padding: 8px 14px;
-            border-radius: 20px;
-            background: var(--tg-theme-secondary-bg-color);
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 2px solid transparent;
-        }
-        
-        .user-chip:active {
-            transform: scale(0.95);
-        }
-        
-        .user-chip.selected {
-            background: rgba(36, 129, 204, 0.15);
-            border-color: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-color);
-        }
-        
-        .select-all-btn {
-            display: inline-block;
-            padding: 6px 12px;
-            font-size: 12px;
-            color: var(--tg-theme-button-color);
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-        
-        .summary-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--tg-theme-secondary-bg-color);
-            padding: 12px 15px;
-            border-top: 1px solid rgba(0,0,0,0.1);
-        }
-        
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            margin-bottom: 5px;
-        }
-        
-        .summary-row:last-child {
-            margin-bottom: 0;
-        }
-        
-        .summary-label {
-            color: var(--tg-theme-hint-color);
-        }
-        
-        .summary-value {
-            font-weight: 600;
-        }
-        
-        .loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            gap: 15px;
-        }
-        
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--tg-theme-secondary-bg-color);
-            border-top-color: var(--tg-theme-button-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .error-container {
-            padding: 30px;
-            text-align: center;
-        }
-        
-        .error-container h3 {
-            color: var(--danger-color);
-            margin-bottom: 10px;
-        }
-        
-        /* Tema escuro */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --tg-theme-bg-color: #1c1c1e;
-                --tg-theme-text-color: #ffffff;
-                --tg-theme-secondary-bg-color: #2c2c2e;
-                --tg-theme-hint-color: #8e8e93;
-            }
-        }
+
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--tg-theme-button-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
     </style>
 </head>
 <body>
-    <div id="loading" class="loading">
-        <div class="spinner"></div>
-        <span>Carregando configuração...</span>
+
+    <div class="section-title">Prazo Global de Encerramento</div>
+    <div class="card">
+        <input type="date" id="input-data" class="dt-input">
+        <input type="time" id="input-hora" class="dt-input">
     </div>
-    
-    <div id="app" style="display: none;">
-        <div class="header">
-            <h1>⚙️ Configurar Rodada</h1>
-            <small id="rodada-info">Rodada --</small>
-        </div>
-        
-        <div class="container">
-            <!-- Seleção de Rodada -->
-            <div class="section">
-                <div class="section-title">🔄 Selecionar Rodada</div>
-                <select class="input-field" id="rodada-select" onchange="mudarRodada()">
-                    <option value="">Carregando rodadas...</option>
-                </select>
-            </div>
-            
-            <!-- Seleção de Jogos -->
-            <div class="section">
-                <div class="section-title">📋 Selecionar Jogos</div>
-                <span class="select-all-btn" onclick="toggleAllGames()">Selecionar/Desmarcar Todos</span>
-                <div id="games-list"></div>
-            </div>
-            
-            <!-- Configuração de Horário -->
-            <div class="section">
-                <div class="section-title">⏰ Horário de Encerramento (Global)</div>
-                <div class="input-group">
-                    <label class="input-label">Data</label>
-                    <input type="date" class="input-field" id="input-data">
-                </div>
-                <div class="input-group">
-                    <label class="input-label">Hora</label>
-                    <input type="time" class="input-field" id="input-hora" value="16:00">
-                </div>
-            </div>
-            
-            <!-- Configuração de Trunfo -->
-            <div class="section">
-                <div class="section-title">🎖️ Jogadores com Trunfo</div>
-                <span class="select-all-btn" onclick="toggleAllTrunfos()">Selecionar/Desmarcar Todos</span>
-                <div class="user-chips" id="trunfo-list"></div>
-            </div>
-            
-            <!-- Configuração de Dobrada -->
-            <div class="section">
-                <div class="section-title">⭐ Jogadores com Dobrada (Estrela)</div>
-                <span class="select-all-btn" onclick="toggleAllDobradas()">Selecionar/Desmarcar Todos</span>
-                <div class="user-chips" id="dobrada-list"></div>
-            </div>
-        </div>
-        
-        <div class="summary-bar">
-            <div class="summary-row">
-                <span class="summary-label">Jogos Selecionados:</span>
-                <span class="summary-value" id="summary-jogos">0</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label">Trunfos:</span>
-                <span class="summary-value" id="summary-trunfos">0</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label">Dobradas:</span>
-                <span class="summary-value" id="summary-dobradas">0</span>
-            </div>
-        </div>
-    </div>
+
+    <div id="container-rodadas"></div>
+
+    <button class="btn-main" onclick="submit()">CRIAR RODADA(S)</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.ready();
         
-        // Aplica tema
-        if (tg.themeParams) {
-            const root = document.documentElement;
-            if (tg.themeParams.bg_color) root.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
-            if (tg.themeParams.text_color) root.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
-            if (tg.themeParams.button_color) root.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
-            if (tg.themeParams.secondary_bg_color) root.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
-            if (tg.themeParams.hint_color) root.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
-        }
-
-        // Dados
-        let rodadaNum = 0;
-        let jogosData = [];
+        let rodadasData = {};
         let usuariosData = [];
-        let todasRodadas = {};
-        
-        // Estrutura para persistência: { rodadaId: { games: Set, trunfos: Set, dobradas: Set } }
-        let persistencia = {};
+        let configuracao = {};
 
         function init() {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const dataRaw = urlParams.get('data');
-                
-                if (dataRaw) {
-                    const decodedData = JSON.parse(atob(dataRaw));
-                    processarDados(decodedData);
-                } else {
-                    throw new Error("Nenhum dado recebido na URL");
-                }
-            } catch (e) {
-                document.getElementById('loading').style.display = 'none';
-                document.body.innerHTML = `
-                    <div class="error-container">
-                        <h3>Erro ao carregar</h3>
-                        <small>${e.message}</small>
-                    </div>
-                `;
-            }
-        }
-        
-        function processarDados(decodedData) {
-            todasRodadas = decodedData.rodadas || {};
-            usuariosData = decodedData.usuarios || [];
+            const urlParams = new URLSearchParams(window.location.search);
+            const raw = urlParams.get('data');
             
-            const rodadasArray = Object.keys(todasRodadas).map(r => parseInt(r)).sort((a, b) => a - b);
-            
-            // Inicializa persistência para todas as rodadas
-            rodadasArray.forEach(r => {
-                persistencia[r] = {
-                    games: new Set(),
-                    trunfos: new Set(),
-                    dobradas: new Set()
-                };
-            });
-
-            rodadaNum = rodadasArray.length > 0 ? rodadasArray[0] : 0;
-            jogosData = todasRodadas[rodadaNum] || [];
-            
-            preencherSelectRodadas(rodadasArray);
-            document.getElementById('rodada-info').innerText = `Rodada ${rodadaNum} - ${jogosData.length} jogos`;
-            
-            const hoje = new Date();
-            document.getElementById('input-data').value = hoje.toISOString().split('T')[0];
-            
-            renderGames();
-            renderUsers();
-            
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-            
-            tg.MainButton.setText("CRIAR RODADA(S)");
-            tg.MainButton.show();
-            tg.MainButton.onClick(submit);
-        }
-
-        function renderGames() {
-            const list = document.getElementById('games-list');
-            list.innerHTML = '';
-            
-            const selectedGames = persistencia[rodadaNum].games;
-            
-            jogosData.forEach((jogo, index) => {
-                const item = document.createElement('div');
-                const jogoId = jogo.id || index;
-                item.className = 'game-item' + (selectedGames.has(jogoId) ? ' selected' : '');
-                item.dataset.id = jogoId;
-                
-                const dataStr = jogo.data ? formatDate(jogo.data) : '';
-                const horaStr = jogo.hora || '';
-                
-                item.innerHTML = `
-                    <div class="game-checkbox"></div>
-                    <div class="game-info">
-                        <div class="game-teams">${jogo.home || jogo.time_casa} x ${jogo.away || jogo.time_fora}</div>
-                        <div class="game-date">${dataStr} ${horaStr}</div>
-                    </div>
-                `;
-                
-                item.onclick = () => toggleGame(item, jogoId);
-                list.appendChild(item);
-            });
-            
-            updateSummary();
-        }
-
-        function renderUsers() {
-            const trunfoList = document.getElementById('trunfo-list');
-            const dobradaList = document.getElementById('dobrada-list');
-            
-            trunfoList.innerHTML = '';
-            dobradaList.innerHTML = '';
-            
-            const selectedTrunfos = persistencia[rodadaNum].trunfos;
-            const selectedDobradas = persistencia[rodadaNum].dobradas;
-            
-            if (usuariosData.length === 0) {
-                trunfoList.innerHTML = '<span style="color: var(--tg-theme-hint-color); font-size: 13px;">Nenhum usuário registrado</span>';
-                dobradaList.innerHTML = '<span style="color: var(--tg-theme-hint-color); font-size: 13px;">Nenhum usuário registrado</span>';
+            if (!raw) {
+                document.body.innerHTML = "<h3>Erro: Dados não recebidos</h3>";
                 return;
             }
-            
-            usuariosData.forEach(user => {
-                const userId = typeof user === 'object' ? user.id : user;
-                const userName = typeof user === 'object' ? user.nome : `ID: ${userId}`;
 
-                // Chip para Trunfo
-                const trunfoChip = document.createElement('span');
-                trunfoChip.className = 'user-chip' + (selectedTrunfos.has(userId) ? ' selected' : '');
-                trunfoChip.dataset.id = userId;
-                trunfoChip.innerText = userName;
-                trunfoChip.onclick = () => toggleTrunfo(trunfoChip, userId);
-                trunfoList.appendChild(trunfoChip);
-                
-                // Chip para Dobrada
-                const dobradaChip = document.createElement('span');
-                dobradaChip.className = 'user-chip' + (selectedDobradas.has(userId) ? ' selected' : '');
-                dobradaChip.dataset.id = userId;
-                dobradaChip.innerText = userName;
-                dobradaChip.onclick = () => toggleDobrada(dobradaChip, userId);
-                dobradaList.appendChild(dobradaChip);
-            });
-        }
-
-        function preencherSelectRodadas(rodadasArray) {
-            const select = document.getElementById('rodada-select');
-            select.innerHTML = '';
-            
-            rodadasArray.forEach(rodada => {
-                const option = document.createElement('option');
-                option.value = rodada;
-                option.textContent = `Rodada ${rodada}`;
-                if (rodada === rodadaNum) option.selected = true;
-                select.appendChild(option);
-            });
-        }
-        
-        function mudarRodada() {
-            const select = document.getElementById('rodada-select');
-            const novaRodada = parseInt(select.value);
-            
-            if (novaRodada === rodadaNum) return;
-            
-            rodadaNum = novaRodada;
-            jogosData = todasRodadas[rodadaNum] || [];
-            
-            document.getElementById('rodada-info').innerText = `Rodada ${rodadaNum} - ${jogosData.length} jogos`;
-            renderGames();
-            renderUsers();
-            hapticFeedback();
-        }
-        
-        function formatDate(dateStr) {
-            if (!dateStr) return '';
             try {
-                const date = new Date(dateStr);
-                return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-            } catch {
-                return dateStr;
+                const decoded = JSON.parse(atob(raw));
+                rodadasData = decoded.rodadas;
+                usuariosData = decoded.usuarios;
+                render();
+            } catch (e) {
+                tg.showAlert("Erro ao processar dados da URL.");
             }
         }
 
-        function toggleGame(element, id) {
-            const selectedGames = persistencia[rodadaNum].games;
-            if (selectedGames.has(id)) {
-                selectedGames.delete(id);
-                element.classList.remove('selected');
-            } else {
-                selectedGames.add(id);
-                element.classList.add('selected');
+        function render() {
+            const container = document.getElementById('container-rodadas');
+            
+            for (const rNum in rodadasData) {
+                configuracao[rNum] = { jogos: [], dobradas: [] };
+                
+                const rodadaSection = document.createElement('div');
+                rodadaSection.innerHTML = `<div class="section-title">Rodada ${rNum}</div>`;
+                
+                // Card de Jogos
+                const cardJogos = document.createElement('div');
+                cardJogos.className = 'card';
+                rodadasData[rNum].forEach(jogo => {
+                    const row = document.createElement('div');
+                    row.className = 'game-row';
+                    row.innerHTML = `
+                        <div class="game-info">${jogo.home} x ${jogo.away}</div>
+                        <label class="switch">
+                            <input type="checkbox" checked onchange="toggleJogo('${rNum}', '${jogo.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    `;
+                    cardJogos.appendChild(row);
+                    configuracao[rNum].jogos.push(jogo.id);
+                });
+                rodadaSection.appendChild(cardJogos);
+
+                // Card de Estrelas (Dobradas)
+                const labelEstrela = document.createElement('div');
+                labelEstrela.className = 'section-title';
+                labelEstrela.innerText = `Usuários c/ Estrela na Rd ${rNum}`;
+                rodadaSection.appendChild(labelEstrela);
+
+                const cardUsers = document.createElement('div');
+                cardUsers.className = 'card chips-container';
+                
+                usuariosData.forEach(user => {
+                    const chip = document.createElement('div');
+                    // ja_usou_estrela == 0 significa que ele ainda tem a estrela disponível
+                    const temDisponivel = user.ja_usou_estrela === 0;
+                    
+                    chip.className = `chip ${temDisponivel ? 'selected' : 'disabled'}`;
+                    chip.innerText = user.nome;
+                    
+                    if (temDisponivel) {
+                        configuracao[rNum].dobradas.push(user.id);
+                        chip.onclick = () => {
+                            chip.classList.toggle('selected');
+                            toggleEstrela(rNum, user.id);
+                        };
+                    }
+                    cardUsers.appendChild(chip);
+                });
+                rodadaSection.appendChild(cardUsers);
+                container.appendChild(rodadaSection);
             }
-            updateSummary();
-            hapticFeedback();
         }
 
-        function toggleTrunfo(element, id) {
-            const selectedTrunfos = persistencia[rodadaNum].trunfos;
-            if (selectedTrunfos.has(id)) {
-                selectedTrunfos.delete(id);
-                element.classList.remove('selected');
-            } else {
-                selectedTrunfos.add(id);
-                element.classList.add('selected');
-            }
-            updateSummary();
-            hapticFeedback();
+        function toggleJogo(rNum, id, isChecked) {
+            if (isChecked) configuracao[rNum].jogos.push(id);
+            else configuracao[rNum].jogos = configuracao[rNum].jogos.filter(i => i !== id);
         }
 
-        function toggleDobrada(element, id) {
-            const selectedDobradas = persistencia[rodadaNum].dobradas;
-            if (selectedDobradas.has(id)) {
-                selectedDobradas.delete(id);
-                element.classList.remove('selected');
-            } else {
-                selectedDobradas.add(id);
-                element.classList.add('selected');
-            }
-            updateSummary();
-            hapticFeedback();
-        }
-
-        function toggleAllGames() {
-            const items = document.querySelectorAll('#games-list .game-item');
-            const selectedGames = persistencia[rodadaNum].games;
-            const allSelected = selectedGames.size === jogosData.length;
-            
-            items.forEach((item, index) => {
-                const id = jogosData[index].id || index;
-                if (allSelected) {
-                    selectedGames.delete(id);
-                    item.classList.remove('selected');
-                } else {
-                    selectedGames.add(id);
-                    item.classList.add('selected');
-                }
-            });
-            
-            updateSummary();
-            hapticFeedback();
-        }
-
-        function toggleAllTrunfos() {
-            const chips = document.querySelectorAll('#trunfo-list .user-chip');
-            const selectedTrunfos = persistencia[rodadaNum].trunfos;
-            const allSelected = selectedTrunfos.size === usuariosData.length;
-            
-            chips.forEach(chip => {
-                const id = chip.dataset.id;
-                if (allSelected) {
-                    selectedTrunfos.delete(id);
-                    chip.classList.remove('selected');
-                } else {
-                    selectedTrunfos.add(id);
-                    chip.classList.add('selected');
-                }
-            });
-            
-            updateSummary();
-            hapticFeedback();
-        }
-
-        function toggleAllDobradas() {
-            const chips = document.querySelectorAll('#dobrada-list .user-chip');
-            const selectedDobradas = persistencia[rodadaNum].dobradas;
-            const allSelected = selectedDobradas.size === usuariosData.length;
-            
-            chips.forEach(chip => {
-                const id = chip.dataset.id;
-                if (allSelected) {
-                    selectedDobradas.delete(id);
-                    chip.classList.remove('selected');
-                } else {
-                    selectedDobradas.add(id);
-                    chip.classList.add('selected');
-                }
-            });
-            
-            updateSummary();
-            hapticFeedback();
-        }
-
-        function updateSummary() {
-            const p = persistencia[rodadaNum];
-            document.getElementById('summary-jogos').innerText = p.games.size;
-            document.getElementById('summary-trunfos').innerText = p.trunfos.size;
-            document.getElementById('summary-dobradas').innerText = p.dobradas.size;
-        }
-
-        function hapticFeedback() {
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('light');
-            }
+        function toggleEstrela(rNum, userId) {
+            const index = configuracao[rNum].dobradas.indexOf(userId);
+            if (index > -1) configuracao[rNum].dobradas.splice(index, 1);
+            else configuracao[rNum].dobradas.push(userId);
         }
 
         function submit() {
@@ -659,41 +178,19 @@
             const hora = document.getElementById('input-hora').value;
             
             if (!data || !hora) {
-                tg.showAlert("Defina a data e hora de encerramento!");
+                tg.showAlert("⚠️ Defina a data e hora de encerramento!");
                 return;
             }
 
-            // Monta o objeto final com todas as rodadas configuradas
-            const configFinal = {
+            const payload = {
                 config_multipla: {
                     hora_encerramento: `${data} ${hora}`,
-                    rodadas: {}
+                    rodadas: configuracao
                 }
             };
 
-            let totalJogos = 0;
-            for (const rId in persistencia) {
-                const p = persistencia[rId];
-                if (p.games.size > 0) {
-                    configFinal.config_multipla.rodadas[rId] = {
-                        jogos: Array.from(p.games),
-                        trunfos: Array.from(p.trunfos),
-                        dobradas: Array.from(p.dobradas)
-                    };
-                    totalJogos += p.games.size;
-                }
-            }
-            
-            if (totalJogos === 0) {
-                tg.showAlert("Selecione pelo menos um jogo em alguma rodada!");
-                return;
-            }
-            
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.notificationOccurred('success');
-            }
-            
-            tg.sendData(JSON.stringify(configFinal));
+            tg.sendData(JSON.stringify(payload));
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             setTimeout(() => tg.close(), 300);
         }
 
