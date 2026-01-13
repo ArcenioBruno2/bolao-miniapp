@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bolão 42</title>
+    <title>Bolão 2026 - Admin</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -47,9 +47,11 @@
             color: var(--tg-theme-hint-color); transition: transform 0.1s;
         }
         .star-btn.active { color: #FFD700; }
+        #error-msg { color: red; text-align: center; padding: 20px; display: none; }
     </style>
 </head>
 <body>
+    <div id="error-msg"></div>
     <div class="header">
         <h1 id="rodada-title">Carregando...</h1>
         <div id="info-bar" style="font-size: 12px; color: var(--tg-theme-hint-color);">
@@ -66,45 +68,71 @@
         let gamesData = [];
         let selectedStarIndex = -1;
         let podeDobradaGlobal = false;
-        let tinhaEstrelaNoInicio = false; // NOVA TRAVA
+        let tinhaEstrelaNoInicio = false;
+
+        // Função para decodificar Base64 com suporte a UTF-8 (acentos)
+        function b64DecodeUnicode(str) {
+            return decodeURIComponent(atob(str).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        }
 
         function init() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const dataRaw = urlParams.get('data');
-                if (!dataRaw) throw new Error("Sem dados");
-
-                const decodedData = JSON.parse(atob(dataRaw));
                 
-                const rodada = decodedData.r || decodedData.rodada;
-                const horario = decodedData.h || decodedData.horario;
-                podeDobradaGlobal = decodedData.d !== undefined ? decodedData.d : decodedData.pode_dobrada;
-                gamesData = decodedData.j || decodedData.jogos;
+                if (!dataRaw) {
+                    throw new Error("Nenhum dado recebido da URL.");
+                }
 
-                // Verifica se já veio alguma estrela marcada originalmente
+                // Decodifica os dados vindos do Python
+                const decodedData = JSON.parse(b64DecodeUnicode(dataRaw));
+                console.log("Dados recebidos:", decodedData);
+
+                // Mapeia as chaves curtas (r, h, j, d) enviadas pelo Python
+                const rodada = decodedData.r || "S/N";
+                const horario = decodedData.h || "--:--";
+                podeDobradaGlobal = decodedData.d || false;
+                gamesData = decodedData.j || [];
+
+                if (!Array.isArray(gamesData)) {
+                    throw new Error("A lista de jogos não é válida.");
+                }
+
+                // Verifica estado inicial da estrela (PD)
                 gamesData.forEach((game, index) => {
                     if (game.is_pd) {
                         selectedStarIndex = index;
-                        tinhaEstrelaNoInicio = true; // Se ele já tinha, ele pode editar
+                        tinhaEstrelaNoInicio = true;
                     }
                 });
 
                 document.getElementById('rodada-title').innerText = `Rodada ${rodada}`;
                 document.getElementById('info-horario').innerText = `Fecha às ${horario}`;
                 
-                // Texto informativo
                 const statusEstrela = (podeDobradaGlobal || tinhaEstrelaNoInicio) ? "Estrela disponível" : "Estrela indisponível";
                 document.getElementById('info-dobrada').innerText = statusEstrela;
                 
                 renderGames();
+
             } catch (e) {
-                document.body.innerHTML = `<div style="padding:20px;text-align:center;"><h3>Erro ao carregar</h3><small>${e.message}</small></div>`;
+                console.error(e);
+                const errorDiv = document.getElementById('error-msg');
+                errorDiv.style.display = 'block';
+                errorDiv.innerHTML = `<h3>Erro de Inicialização</h3><small>${e.message}</small>`;
+                document.getElementById('rodada-title').innerText = "Erro";
             }
         }
 
         function renderGames() {
             const list = document.getElementById('games-list');
             list.innerHTML = '';
+
+            if (gamesData.length === 0) {
+                list.innerHTML = '<p style="text-align:center;">Nenhum jogo disponível.</p>';
+                return;
+            }
 
             gamesData.forEach((game, index) => {
                 const card = document.createElement('div');
@@ -115,11 +143,13 @@
                     <div class="teams">
                         <div class="team-row">
                             <span class="team-name">${game.home}</span>
-                            <input type="number" class="score-input" id="h-${index}" inputmode="numeric" value="${game.home_score !== undefined ? game.home_score : ''}">
+                            <input type="number" class="score-input" id="h-${index}" inputmode="numeric" 
+                                value="${game.home_score !== null && game.home_score !== undefined ? game.home_score : ''}">
                         </div>
                         <div class="team-row">
                             <span class="team-name">${game.away}</span>
-                            <input type="number" class="score-input" id="a-${index}" inputmode="numeric" value="${game.away_score !== undefined ? game.away_score : ''}">
+                            <input type="number" class="score-input" id="a-${index}" inputmode="numeric" 
+                                value="${game.away_score !== null && game.away_score !== undefined ? game.away_score : ''}">
                         </div>
                     </div>
                     <div class="star-btn ${isStarActive ? 'active' : ''}" onclick="toggleStar(${index})">★</div>
@@ -127,28 +157,22 @@
                 list.appendChild(card);
             });
 
-            tg.MainButton.setText("ENVIAR PALPITES").show().onClick(send);
+            tg.MainButton.setText("ENVIAR CONFIGURAÇÃO").show().onClick(send);
         }
 
         function toggleStar(index) {
-            // LÓGICA CORRIGIDA:
-            // Permite clicar se:
-            // 1. O servidor disse que pode (podeDobradaGlobal)
-            // 2. OU se o usuário já entrou na tela com uma estrela (tinhaEstrelaNoInicio)
             if (!podeDobradaGlobal && !tinhaEstrelaNoInicio) {
-                tg.showAlert("Você não possui estrela disponível para esta rodada.");
+                tg.showAlert("Estrela não disponível.");
                 return;
             }
 
             const stars = document.querySelectorAll('.star-btn');
             
             if (selectedStarIndex === index) {
-                // Desmarca
                 selectedStarIndex = -1;
                 stars[index].classList.remove('active');
             } else {
-                // Remove anterior e marca nova
-                if (selectedStarIndex !== -1) {
+                if (selectedStarIndex !== -1 && stars[selectedStarIndex]) {
                     stars[selectedStarIndex].classList.remove('active');
                 }
                 selectedStarIndex = index;
@@ -157,22 +181,26 @@
         }
 
         function send() {
-            const res = [];
+            const payload = {
+                rodada: document.getElementById('rodada-title').innerText.replace('Rodada ', ''),
+                jogos: []
+            };
+
             for (let i = 0; i < gamesData.length; i++) {
                 const h = document.getElementById(`h-${i}`).value;
                 const a = document.getElementById(`a-${i}`).value;
                 
-                if (h === '' || a === '') {
-                    tg.showAlert("Preencha todos os placares!");
-                    return;
-                }
-                
-                let line = `${gamesData[i].home} ${h} x ${a} ${gamesData[i].away}`;
-                if (selectedStarIndex === i) line += " PD";
-                res.push(line);
+                payload.jogos.push({
+                    home: gamesData[i].home,
+                    away: gamesData[i].away,
+                    h: h,
+                    a: a,
+                    is_pd: (selectedStarIndex === i)
+                });
             }
             
-            tg.sendData(res.join('\n'));
+            // Envia como JSON para o bot processar facilmente
+            tg.sendData(JSON.stringify(payload));
             setTimeout(() => tg.close(), 200);
         }
 
