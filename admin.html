@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin - Bolão 42</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-button-color: #2481cc;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #efeff3;
+            --tg-theme-hint-color: #999999;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            user-select: none;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        .header {
+            padding: 15px;
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .header small {
+            opacity: 0.9;
+        }
+        
+        .container {
+            padding: 15px;
+            padding-bottom: 120px;
+        }
+        
+        .section {
+            background: var(--tg-theme-bg-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--tg-theme-hint-color);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .game-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .game-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .game-item:active {
+            transform: scale(0.98);
+        }
+        
+        .game-item.selected {
+            background: rgba(40, 167, 69, 0.15);
+            border: 2px solid var(--success-color);
+        }
+        
+        .game-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 2px solid var(--tg-theme-hint-color);
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        
+        .game-item.selected .game-checkbox {
+            background: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .game-checkbox::after {
+            content: '✓';
+            color: white;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .game-item.selected .game-checkbox::after {
+            opacity: 1;
+        }
+        
+        .game-info {
+            flex: 1;
+        }
+        
+        .game-teams {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .game-date {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color);
+            margin-top: 3px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .input-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--tg-theme-text-color);
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid var(--tg-theme-secondary-bg-color);
+            background: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .input-field:focus {
+            border-color: var(--tg-theme-button-color);
+        }
+        
+        .user-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .user-chip {
+            padding: 8px 14px;
+            border-radius: 20px;
+            background: var(--tg-theme-secondary-bg-color);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .user-chip:active {
+            transform: scale(0.95);
+        }
+        
+        .user-chip.selected {
+            background: rgba(36, 129, 204, 0.15);
+            border-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-color);
+        }
+        
+        .select-all-btn {
+            display: inline-block;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: var(--tg-theme-button-color);
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        
+        .summary-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-secondary-bg-color);
+            padding: 12px 15px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        
+        .summary-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .summary-label {
+            color: var(--tg-theme-hint-color);
+        }
+        
+        .summary-value {
+            font-weight: 600;
+        }
+        
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            gap: 15px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--tg-theme-secondary-bg-color);
+            border-top-color: var(--tg-theme-button-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-container {
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .error-container h3 {
+            color: var(--danger-color);
+            margin-bottom: 10px;
+        }
+        
+        /* Tema escuro */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --tg-theme-bg-color: #1c1c1e;
+                --tg-theme-text-color: #ffffff;
+                --tg-theme-secondary-bg-color: #2c2c2e;
+                --tg-theme-hint-color: #8e8e93;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <span>Carregando configuração...</span>
+    </div>
+    
+    <div id="app" style="display: none;">
+        <div class="header">
+            <h1>⚙️ Configurar Rodada</h1>
+            <small id="rodada-info">Rodada --</small>
+        </div>
+        
+        <div class="container">
+            <!-- Seleção de Jogos -->
+            <div class="section">
+                <div class="section-title">📋 Selecionar Jogos</div>
+                <span class="select-all-btn" onclick="toggleAllGames()">Selecionar/Desmarcar Todos</span>
+                <div id="games-list"></div>
+            </div>
+            
+            <!-- Configuração de Horário -->
+            <div class="section">
+                <div class="section-title">⏰ Horário de Encerramento</div>
+                <div class="input-group">
+                    <label class="input-label">Data</label>
+                    <input type="date" class="input-field" id="input-data">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Hora</label>
+                    <input type="time" class="input-field" id="input-hora" value="16:00">
+                </div>
+            </div>
+            
+            <!-- Configuração de Trunfo -->
+            <div class="section">
+                <div class="section-title">🎖️ Jogadores com Trunfo</div>
+                <span class="select-all-btn" onclick="toggleAllTrunfos()">Selecionar/Desmarcar Todos</span>
+                <div class="user-chips" id="trunfo-list"></div>
+            </div>
+            
+            <!-- Configuração de Dobrada -->
+            <div class="section">
+                <div class="section-title">⭐ Jogadores com Dobrada (Estrela)</div>
+                <span class="select-all-btn" onclick="toggleAllDobradas()">Selecionar/Desmarcar Todos</span>
+                <div class="user-chips" id="dobrada-list"></div>
+            </div>
+        </div>
+        
+        <div class="summary-bar">
+            <div class="summary-row">
+                <span class="summary-label">Jogos selecionados:</span>
+                <span class="summary-value" id="summary-jogos">0</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Trunfos:</span>
+                <span class="summary-value" id="summary-trunfos">0</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Dobradas:</span>
+                <span class="summary-value" id="summary-dobradas">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+        
+        // Aplica tema
+        if (tg.themeParams) {
+            const root = document.documentElement;
+            if (tg.themeParams.bg_color) root.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+            if (tg.themeParams.text_color) root.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
+            if (tg.themeParams.button_color) root.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
+            if (tg.themeParams.secondary_bg_color) root.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
+            if (tg.themeParams.hint_color) root.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
+        }
+
+        // Dados
+        let rodadaNum = 0;
+        let jogosData = [];
+        let usuariosData = [];
+        let selectedGames = new Set();
+        let selectedTrunfos = new Set();
+        let selectedDobradas = new Set();
+
+        function init() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const dataRaw = urlParams.get('data');
+                
+                if (!dataRaw) {
+                    throw new Error("Nenhum dado recebido");
+                }
+
+                const decodedData = JSON.parse(atob(dataRaw));
+                
+                rodadaNum = decodedData.r || decodedData.rodada || 0;
+                jogosData = decodedData.jogos || [];
+                usuariosData = decodedData.usuarios || [];
+
+                document.getElementById('rodada-info').innerText = `Rodada ${rodadaNum} - ${jogosData.length} jogos`;
+                
+                // Define data padrão (hoje)
+                const hoje = new Date();
+                document.getElementById('input-data').value = hoje.toISOString().split('T')[0];
+                
+                renderGames();
+                renderUsers();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                
+                tg.MainButton.setText("CRIAR RODADA");
+                tg.MainButton.show();
+                tg.MainButton.onClick(submit);
+                
+            } catch (e) {
+                document.getElementById('loading').style.display = 'none';
+                document.body.innerHTML = `
+                    <div class="error-container">
+                        <h3>❌ Erro ao carregar</h3>
+                        <small>${e.message}</small>
+                    </div>
+                `;
+            }
+        }
+
+        function renderGames() {
+            const list = document.getElementById('games-list');
+            list.innerHTML = '';
+            
+            jogosData.forEach((jogo, index) => {
+                const item = document.createElement('div');
+                item.className = 'game-item';
+                item.dataset.id = jogo.id || index;
+                
+                const dataStr = jogo.data ? formatDate(jogo.data) : '';
+                const horaStr = jogo.hora || '';
+                
+                item.innerHTML = `
+                    <div class="game-checkbox"></div>
+                    <div class="game-info">
+                        <div class="game-teams">${jogo.home || jogo.time_casa} x ${jogo.away || jogo.time_fora}</div>
+                        <div class="game-date">${dataStr} ${horaStr}</div>
+                    </div>
+                `;
+                
+                item.onclick = () => toggleGame(item, jogo.id || index);
+                list.appendChild(item);
+            });
+            
+            updateSummary();
+        }
+
+        function renderUsers() {
+            const trunfoList = document.getElementById('trunfo-list');
+            const dobradaList = document.getElementById('dobrada-list');
+            
+            trunfoList.innerHTML = '';
+            dobradaList.innerHTML = '';
+            
+            // Se não há usuários, mostra mensagem
+            if (usuariosData.length === 0) {
+                trunfoList.innerHTML = '<span style="color: var(--tg-theme-hint-color); font-size: 13px;">Nenhum usuário registrado</span>';
+                dobradaList.innerHTML = '<span style="color: var(--tg-theme-hint-color); font-size: 13px;">Nenhum usuário registrado</span>';
+                return;
+            }
+            
+            usuariosData.forEach(userId => {
+                // Chip para Trunfo
+                const trunfoChip = document.createElement('span');
+                trunfoChip.className = 'user-chip';
+                trunfoChip.dataset.id = userId;
+                trunfoChip.innerText = `ID: ${userId}`;
+                trunfoChip.onclick = () => toggleTrunfo(trunfoChip, userId);
+                trunfoList.appendChild(trunfoChip);
+                
+                // Chip para Dobrada
+                const dobradaChip = document.createElement('span');
+                dobradaChip.className = 'user-chip';
+                dobradaChip.dataset.id = userId;
+                dobradaChip.innerText = `ID: ${userId}`;
+                dobradaChip.onclick = () => toggleDobrada(dobradaChip, userId);
+                dobradaList.appendChild(dobradaChip);
+            });
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            } catch {
+                return dateStr;
+            }
+        }
+
+        function toggleGame(element, id) {
+            if (selectedGames.has(id)) {
+                selectedGames.delete(id);
+                element.classList.remove('selected');
+            } else {
+                selectedGames.add(id);
+                element.classList.add('selected');
+            }
+            updateSummary();
+            hapticFeedback();
+        }
+
+        function toggleTrunfo(element, id) {
+            if (selectedTrunfos.has(id)) {
+                selectedTrunfos.delete(id);
+                element.classList.remove('selected');
+            } else {
+                selectedTrunfos.add(id);
+                element.classList.add('selected');
+            }
+            updateSummary();
+            hapticFeedback();
+        }
+
+        function toggleDobrada(element, id) {
+            if (selectedDobradas.has(id)) {
+                selectedDobradas.delete(id);
+                element.classList.remove('selected');
+            } else {
+                selectedDobradas.add(id);
+                element.classList.add('selected');
+            }
+            updateSummary();
+            hapticFeedback();
+        }
+
+        function toggleAllGames() {
+            const items = document.querySelectorAll('#games-list .game-item');
+            const allSelected = selectedGames.size === jogosData.length;
+            
+            items.forEach((item, index) => {
+                const id = jogosData[index].id || index;
+                if (allSelected) {
+                    selectedGames.delete(id);
+                    item.classList.remove('selected');
+                } else {
+                    selectedGames.add(id);
+                    item.classList.add('selected');
+                }
+            });
+            
+            updateSummary();
+            hapticFeedback();
+        }
+
+        function toggleAllTrunfos() {
+            const chips = document.querySelectorAll('#trunfo-list .user-chip');
+            const allSelected = selectedTrunfos.size === usuariosData.length;
+            
+            chips.forEach(chip => {
+                const id = chip.dataset.id;
+                if (allSelected) {
+                    selectedTrunfos.delete(id);
+                    chip.classList.remove('selected');
+                } else {
+                    selectedTrunfos.add(id);
+                    chip.classList.add('selected');
+                }
+            });
+            
+            updateSummary();
+            hapticFeedback();
+        }
+
+        function toggleAllDobradas() {
+            const chips = document.querySelectorAll('#dobrada-list .user-chip');
+            const allSelected = selectedDobradas.size === usuariosData.length;
+            
+            chips.forEach(chip => {
+                const id = chip.dataset.id;
+                if (allSelected) {
+                    selectedDobradas.delete(id);
+                    chip.classList.remove('selected');
+                } else {
+                    selectedDobradas.add(id);
+                    chip.classList.add('selected');
+                }
+            });
+            
+            updateSummary();
+            hapticFeedback();
+        }
+
+        function updateSummary() {
+            document.getElementById('summary-jogos').innerText = selectedGames.size;
+            document.getElementById('summary-trunfos').innerText = selectedTrunfos.size;
+            document.getElementById('summary-dobradas').innerText = selectedDobradas.size;
+        }
+
+        function hapticFeedback() {
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        function submit() {
+            // Validações
+            if (selectedGames.size === 0) {
+                tg.showAlert("❌ Selecione pelo menos um jogo!");
+                return;
+            }
+            
+            const data = document.getElementById('input-data').value;
+            const hora = document.getElementById('input-hora').value;
+            
+            if (!data || !hora) {
+                tg.showAlert("❌ Defina a data e hora de encerramento!");
+                return;
+            }
+            
+            // Monta objeto de configuração
+            const config = {
+                config: {
+                    rodada: rodadaNum,
+                    jogos: Array.from(selectedGames),
+                    hora_encerramento: `${data} ${hora}`,
+                    trunfos: Array.from(selectedTrunfos),
+                    dobradas: Array.from(selectedDobradas)
+                }
+            };
+            
+            // Feedback de sucesso
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+            
+            // Envia dados
+            tg.sendData(JSON.stringify(config));
+            
+            setTimeout(() => tg.close(), 300);
+        }
+
+        // Inicializa
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
