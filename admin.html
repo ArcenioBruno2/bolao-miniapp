@@ -407,9 +407,12 @@
         
         function buscarDadosViaAPI(sessionId) {
             // Determina a URL da API
-            // Em desenvolvimento: localhost:5000
-            // Em producao: mesmo dominio do bot
-            const apiUrl = `http://localhost:5000/api/mini-app/session/${sessionId}`;
+            // Se estiver rodando localmente ou em um domínio específico, ajuste aqui
+            // Por padrão, tenta localhost para desenvolvimento
+            let apiUrl = `http://localhost:5000/api/mini-app/session/${sessionId}`;
+            
+            // Se você tiver um domínio para o bot, pode descomentar e ajustar a linha abaixo:
+            // apiUrl = `https://seu-dominio-do-bot.com/api/mini-app/session/${sessionId}`;
             
             fetch(apiUrl)
                 .then(response => {
@@ -506,12 +509,15 @@
                 return;
             }
             
-            usuariosData.forEach(userId => {
+            usuariosData.forEach(user => {
+                const userId = typeof user === 'object' ? user.id : user;
+                const userName = typeof user === 'object' ? user.nome : `ID: ${userId}`;
+
                 // Chip para Trunfo
                 const trunfoChip = document.createElement('span');
                 trunfoChip.className = 'user-chip';
                 trunfoChip.dataset.id = userId;
-                trunfoChip.innerText = `ID: ${userId}`;
+                trunfoChip.innerText = userName;
                 trunfoChip.onclick = () => toggleTrunfo(trunfoChip, userId);
                 trunfoList.appendChild(trunfoChip);
                 
@@ -519,7 +525,7 @@
                 const dobradaChip = document.createElement('span');
                 dobradaChip.className = 'user-chip';
                 dobradaChip.dataset.id = userId;
-                dobradaChip.innerText = `ID: ${userId}`;
+                dobradaChip.innerText = userName;
                 dobradaChip.onclick = () => toggleDobrada(dobradaChip, userId);
                 dobradaList.appendChild(dobradaChip);
             });
