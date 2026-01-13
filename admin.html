@@ -313,7 +313,7 @@
             
             <!-- Configuração de Horário -->
             <div class="section">
-                <div class="section-title">⏰ Horário de Encerramento</div>
+                <div class="section-title">⏰ Horário de Encerramento (Global)</div>
                 <div class="input-group">
                     <label class="input-label">Data</label>
                     <input type="date" class="input-field" id="input-data">
@@ -341,7 +341,7 @@
         
         <div class="summary-bar">
             <div class="summary-row">
-                <span class="summary-label">Jogos:</span>
+                <span class="summary-label">Jogos Selecionados:</span>
                 <span class="summary-value" id="summary-jogos">0</span>
             </div>
             <div class="summary-row">
@@ -375,24 +375,18 @@
         let jogosData = [];
         let usuariosData = [];
         let todasRodadas = {};
-        let selectedGames = new Set();
-        let selectedTrunfos = new Set();
-        let selectedDobradas = new Set();
+        
+        // Estrutura para persistência: { rodadaId: { games: Set, trunfos: Set, dobradas: Set } }
+        let persistencia = {};
 
         function init() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const dataRaw = urlParams.get('data');
-                const sessionId = urlParams.get('session');
                 
                 if (dataRaw) {
-                    // Prioridade: Dados diretos na URL (Base64)
-                    // Usamos decodeURIComponent para garantir que caracteres especiais na URL não quebrem o atob
                     const decodedData = JSON.parse(atob(dataRaw));
                     processarDados(decodedData);
-                } else if (sessionId) {
-                    // Busca dados via API (fallback)
-                    buscarDadosViaAPI(sessionId);
                 } else {
                     throw new Error("Nenhum dado recebido na URL");
                 }
@@ -407,55 +401,27 @@
             }
         }
         
-        function buscarDadosViaAPI(sessionId) {
-            // Determina a URL da API
-            // Se estiver rodando localmente ou em um domínio específico, ajuste aqui
-            // Por padrão, tenta localhost para desenvolvimento
-            let apiUrl = `http://localhost:5000/api/mini-app/session/${sessionId}`;
-            
-            // Se você tiver um domínio para o bot, pode descomentar e ajustar a linha abaixo:
-            // apiUrl = `https://seu-dominio-do-bot.com/api/mini-app/session/${sessionId}`;
-            
-            fetch(apiUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Erro ao buscar dados: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    processarDados(data);
-                })
-                .catch(error => {
-                    console.error('Erro:', error);
-                    document.getElementById('loading').style.display = 'none';
-                    document.body.innerHTML = `
-                        <div class="error-container">
-                            <h3>Erro ao carregar dados</h3>
-                            <small>${error.message}</small>
-                        </div>
-                    `;
-                });
-        }
-        
         function processarDados(decodedData) {
-            // Processa rodadas e usuarios do backend
             todasRodadas = decodedData.rodadas || {};
             usuariosData = decodedData.usuarios || [];
             
-            // Se houver rodadas, usa a primeira disponivel
-            const rodadasArray = Object.keys(todasRodadas).map(r => parseInt(r)).sort((a, b) => b - a);
-            rodadaNum = rodadasArray.length > 0 ? rodadasArray[0] : 0;
+            const rodadasArray = Object.keys(todasRodadas).map(r => parseInt(r)).sort((a, b) => a - b);
             
-            // Obtem os jogos da rodada selecionada
+            // Inicializa persistência para todas as rodadas
+            rodadasArray.forEach(r => {
+                persistencia[r] = {
+                    games: new Set(),
+                    trunfos: new Set(),
+                    dobradas: new Set()
+                };
+            });
+
+            rodadaNum = rodadasArray.length > 0 ? rodadasArray[0] : 0;
             jogosData = todasRodadas[rodadaNum] || [];
             
-            // Preenche o select de rodadas
             preencherSelectRodadas(rodadasArray);
-
             document.getElementById('rodada-info').innerText = `Rodada ${rodadaNum} - ${jogosData.length} jogos`;
             
-            // Define data padrão (hoje)
             const hoje = new Date();
             document.getElementById('input-data').value = hoje.toISOString().split('T')[0];
             
@@ -465,7 +431,7 @@
             document.getElementById('loading').style.display = 'none';
             document.getElementById('app').style.display = 'block';
             
-            tg.MainButton.setText("CRIAR RODADA");
+            tg.MainButton.setText("CRIAR RODADA(S)");
             tg.MainButton.show();
             tg.MainButton.onClick(submit);
         }
@@ -474,10 +440,13 @@
             const list = document.getElementById('games-list');
             list.innerHTML = '';
             
+            const selectedGames = persistencia[rodadaNum].games;
+            
             jogosData.forEach((jogo, index) => {
                 const item = document.createElement('div');
-                item.className = 'game-item';
-                item.dataset.id = jogo.id || index;
+                const jogoId = jogo.id || index;
+                item.className = 'game-item' + (selectedGames.has(jogoId) ? ' selected' : '');
+                item.dataset.id = jogoId;
                 
                 const dataStr = jogo.data ? formatDate(jogo.data) : '';
                 const horaStr = jogo.hora || '';
@@ -490,7 +459,7 @@
                     </div>
                 `;
                 
-                item.onclick = () => toggleGame(item, jogo.id || index);
+                item.onclick = () => toggleGame(item, jogoId);
                 list.appendChild(item);
             });
             
@@ -504,7 +473,9 @@
             trunfoList.innerHTML = '';
             dobradaList.innerHTML = '';
             
-            // Se não há usuários, mostra mensagem
+            const selectedTrunfos = persistencia[rodadaNum].trunfos;
+            const selectedDobradas = persistencia[rodadaNum].dobradas;
+            
             if (usuariosData.length === 0) {
                 trunfoList.innerHTML = '<span style="color: var(--tg-theme-hint-color); font-size: 13px;">Nenhum usuário registrado</span>';
                 dobradaList.innerHTML = '<span style="color: var(--tg-theme-hint-color); font-size: 13px;">Nenhum usuário registrado</span>';
@@ -517,7 +488,7 @@
 
                 // Chip para Trunfo
                 const trunfoChip = document.createElement('span');
-                trunfoChip.className = 'user-chip';
+                trunfoChip.className = 'user-chip' + (selectedTrunfos.has(userId) ? ' selected' : '');
                 trunfoChip.dataset.id = userId;
                 trunfoChip.innerText = userName;
                 trunfoChip.onclick = () => toggleTrunfo(trunfoChip, userId);
@@ -525,7 +496,7 @@
                 
                 // Chip para Dobrada
                 const dobradaChip = document.createElement('span');
-                dobradaChip.className = 'user-chip';
+                dobradaChip.className = 'user-chip' + (selectedDobradas.has(userId) ? ' selected' : '');
                 dobradaChip.dataset.id = userId;
                 dobradaChip.innerText = userName;
                 dobradaChip.onclick = () => toggleDobrada(dobradaChip, userId);
@@ -554,10 +525,10 @@
             
             rodadaNum = novaRodada;
             jogosData = todasRodadas[rodadaNum] || [];
-            selectedGames.clear();
             
             document.getElementById('rodada-info').innerText = `Rodada ${rodadaNum} - ${jogosData.length} jogos`;
             renderGames();
+            renderUsers();
             hapticFeedback();
         }
         
@@ -572,6 +543,7 @@
         }
 
         function toggleGame(element, id) {
+            const selectedGames = persistencia[rodadaNum].games;
             if (selectedGames.has(id)) {
                 selectedGames.delete(id);
                 element.classList.remove('selected');
@@ -584,6 +556,7 @@
         }
 
         function toggleTrunfo(element, id) {
+            const selectedTrunfos = persistencia[rodadaNum].trunfos;
             if (selectedTrunfos.has(id)) {
                 selectedTrunfos.delete(id);
                 element.classList.remove('selected');
@@ -596,6 +569,7 @@
         }
 
         function toggleDobrada(element, id) {
+            const selectedDobradas = persistencia[rodadaNum].dobradas;
             if (selectedDobradas.has(id)) {
                 selectedDobradas.delete(id);
                 element.classList.remove('selected');
@@ -609,6 +583,7 @@
 
         function toggleAllGames() {
             const items = document.querySelectorAll('#games-list .game-item');
+            const selectedGames = persistencia[rodadaNum].games;
             const allSelected = selectedGames.size === jogosData.length;
             
             items.forEach((item, index) => {
@@ -628,6 +603,7 @@
 
         function toggleAllTrunfos() {
             const chips = document.querySelectorAll('#trunfo-list .user-chip');
+            const selectedTrunfos = persistencia[rodadaNum].trunfos;
             const allSelected = selectedTrunfos.size === usuariosData.length;
             
             chips.forEach(chip => {
@@ -647,6 +623,7 @@
 
         function toggleAllDobradas() {
             const chips = document.querySelectorAll('#dobrada-list .user-chip');
+            const selectedDobradas = persistencia[rodadaNum].dobradas;
             const allSelected = selectedDobradas.size === usuariosData.length;
             
             chips.forEach(chip => {
@@ -665,9 +642,10 @@
         }
 
         function updateSummary() {
-            document.getElementById('summary-jogos').innerText = selectedGames.size;
-            document.getElementById('summary-trunfos').innerText = selectedTrunfos.size;
-            document.getElementById('summary-dobradas').innerText = selectedDobradas.size;
+            const p = persistencia[rodadaNum];
+            document.getElementById('summary-jogos').innerText = p.games.size;
+            document.getElementById('summary-trunfos').innerText = p.trunfos.size;
+            document.getElementById('summary-dobradas').innerText = p.dobradas.size;
         }
 
         function hapticFeedback() {
@@ -677,12 +655,6 @@
         }
 
         function submit() {
-            // Validações
-            if (selectedGames.size === 0) {
-                tg.showAlert("Selecione pelo menos um jogo!");
-                return;
-            }
-            
             const data = document.getElementById('input-data').value;
             const hora = document.getElementById('input-hora').value;
             
@@ -690,35 +662,42 @@
                 tg.showAlert("Defina a data e hora de encerramento!");
                 return;
             }
-            
-            // Monta objeto de configuração
-            const config = {
-                config: {
-                    rodada: rodadaNum,
-                    jogos: Array.from(selectedGames),
+
+            // Monta o objeto final com todas as rodadas configuradas
+            const configFinal = {
+                config_multipla: {
                     hora_encerramento: `${data} ${hora}`,
-                    trunfos: Array.from(selectedTrunfos),
-                    dobradas: Array.from(selectedDobradas)
+                    rodadas: {}
                 }
             };
+
+            let totalJogos = 0;
+            for (const rId in persistencia) {
+                const p = persistencia[rId];
+                if (p.games.size > 0) {
+                    configFinal.config_multipla.rodadas[rId] = {
+                        jogos: Array.from(p.games),
+                        trunfos: Array.from(p.trunfos),
+                        dobradas: Array.from(p.dobradas)
+                    };
+                    totalJogos += p.games.size;
+                }
+            }
             
-            // Feedback de sucesso
+            if (totalJogos === 0) {
+                tg.showAlert("Selecione pelo menos um jogo em alguma rodada!");
+                return;
+            }
+            
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.notificationOccurred('success');
             }
             
-            // Envia dados
-            tg.sendData(JSON.stringify(config));
-            
+            tg.sendData(JSON.stringify(configFinal));
             setTimeout(() => tg.close(), 300);
         }
 
-        // Inicializa
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
+        init();
     </script>
 </body>
 </html>
