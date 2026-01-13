@@ -172,29 +172,32 @@
     let persistencia = {};
 
     function init() {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const dataRaw = urlParams.get('data');
-                
-                if (dataRaw) {
-                    // DECODIFICAÇÃO SEGURA PARA ACENTOS (UTF-8)
-                    const decodedData = JSON.parse(decodeURIComponent(escape(atob(dataRaw.replace(/-/g, '+').replace(/_/g, '/')))));
-                    processarDados(decodedData);
-                } else {
-                    throw new Error("Nenhum dado recebido na URL");
-                }
-            } catch (e) {
-                console.error(e);
-                document.getElementById('loading').style.display = 'none';
-                document.body.innerHTML = `
-                    <div class="error-container">
-                        <h3>Erro ao carregar</h3>
-                        <p>Verifique se os dados enviados pelo bot estão corretos.</p>
-                        <small style="color:red">${e.message}</small>
-                    </div>
-                `;
-            }
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        let dataRaw = urlParams.get('data');
+        
+        if (dataRaw) {
+            // Corrige o Base64 URL Safe para o formato que o atob entende
+            dataRaw = dataRaw.replace(/-/g, '+').replace(/_/g, '/');
+            
+            // Decodifica lidando com caracteres especiais (acentos)
+            const decodedData = JSON.parse(decodeURIComponent(escape(atob(dataRaw))));
+            processarDados(decodedData);
+        } else {
+            throw new Error("Nenhum dado recebido na URL");
         }
+    } catch (e) {
+        console.error(e);
+        document.getElementById('loading').style.display = 'none';
+        document.body.innerHTML = `
+            <div style="padding: 20px; text-align: center;">
+                <h3 style="color: #dc3545;">Erro de Conexão</h3>
+                <p>O mini-app não conseguiu ler os dados enviados pelo bot.</p>
+                <small style="display: block; margin-top: 10px; color: gray;">${e.message}</small>
+            </div>
+        `;
+    }
+}
 
         function preencherSelect(array) {
             const sel = document.getElementById('rodada-select');
