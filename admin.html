@@ -177,36 +177,43 @@
     let persistencia = {};
 
     function init() {
-    try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const dataRaw = urlParams.get('data');
-        
-        if (dataRaw) {
-            // 1. Decodifica o Base64 para uma string binária
-            const binaryString = atob(dataRaw);
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataRaw = urlParams.get('data');
             
-            // 2. Converte a string binária para um array de bytes (Uint8Array)
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
+            if (dataRaw) {
+                // CORREÇÃO: Decodificar Base64 URL-safe do Python corretamente
+                // Python usa base64.urlsafe_b64encode(), então precisamos decodificar assim:
+                let jsonString;
+                try {
+                    // Primeiro tenta decodificar como URL-safe Base64
+                    jsonString = atob(dataRaw.replace(/-/g, '+').replace(/_/g, '/'));
+                } catch (e) {
+                    // Se falhar, tenta Base64 padrão
+                    jsonString = atob(dataRaw);
+                }
+                
+                // Decodificar UTF-8 corretamente
+                const decodedData = JSON.parse(
+                    decodeURIComponent(
+                        Array.from(new TextEncoder().encode(jsonString))
+                            .map(b => '%' + b.toString(16).padStart(2, '0'))
+                            .join('')
+                    )
+                );
+                
+                console.log("Dados decodificados:", decodedData);
+                processarDados(decodedData);
+            } else {
+                throw new Error("Nenhum dado recebido na URL");
             }
-            
-            // 3. Usa o TextDecoder para transformar os bytes em UTF-8 real (resolve os acentos)
-            const decoder = new TextDecoder('utf-8');
-            const jsonString = decoder.decode(bytes);
-            
-            // 4. Converte o JSON corrigido para objeto
-            const decodedData = JSON.parse(jsonString);
-            
-            processarDados(decodedData);
-        } else {
-            throw new Error("Nenhum dado recebido na URL");
+        } catch (e) {
+            console.error(e);
+            document.getElementById('loading-text').innerText = "Erro: " + e.message;
+            document.getElementById('loading-text').style.color = "red";
         }
-    } catch (e) {
-        console.error("Erro na decodificação:", e);
-        document.getElementById('loading-text').innerText = "Erro ao processar acentos: " + e.message;
     }
-}
+
     function processarDados(data) {
         todasRodadas = data.rodadas;
         usuariosData = data.usuarios;
