@@ -176,44 +176,39 @@
     let usuariosData = [];
     let persistencia = {};
 
-    function init() {
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const dataRaw = urlParams.get('data');
-            
-            if (dataRaw) {
-                // CORREÇÃO: Decodificar Base64 URL-safe do Python corretamente
-                // Python usa base64.urlsafe_b64encode(), então precisamos decodificar assim:
-                let jsonString;
-                try {
-                    // Primeiro tenta decodificar como URL-safe Base64
-                    jsonString = atob(dataRaw.replace(/-/g, '+').replace(/_/g, '/'));
-                } catch (e) {
-                    // Se falhar, tenta Base64 padrão
-                    jsonString = atob(dataRaw);
-                }
-                
-                // Decodificar UTF-8 corretamente
-                const decodedData = JSON.parse(
-                    decodeURIComponent(
-                        Array.from(new TextEncoder().encode(jsonString))
-                            .map(b => '%' + b.toString(16).padStart(2, '0'))
-                            .join('')
-                    )
-                );
-                
-                console.log("Dados decodificados:", decodedData);
-                processarDados(decodedData);
-            } else {
-                throw new Error("Nenhum dado recebido na URL");
-            }
-        } catch (e) {
-            console.error(e);
-            document.getElementById('loading-text').innerText = "Erro: " + e.message;
-            document.getElementById('loading-text').style.color = "red";
-        }
-    }
+    // --- NO SEU SCRIPT DO HTML ---
 
+function init() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataRaw = urlParams.get('data');
+        
+        if (dataRaw) {
+            // DECODIFICAÇÃO ROBUSTA DE UTF-8
+            const binaryString = atob(dataRaw.replace(/-/g, '+').replace(/_/g, '/'));
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            const decodedData = JSON.parse(new TextDecoder().decode(bytes));
+            
+            console.log("Dados decodificados:", decodedData);
+            processarDados(decodedData);
+            
+            // CONFIGURAR DATA ATUAL AUTOMATICAMENTE
+            const inputData = document.getElementById('input-data');
+            if (!inputData.value) {
+                const hoje = new Date().toISOString().split('T')[0];
+                inputData.value = hoje;
+            }
+        } else {
+            throw new Error("Nenhum dado recebido");
+        }
+    } catch (e) {
+        console.error(e);
+        document.getElementById('loading-text').innerText = "Erro ao carregar dados.";
+    }
+}
     function processarDados(data) {
         todasRodadas = data.rodadas;
         usuariosData = data.usuarios;
