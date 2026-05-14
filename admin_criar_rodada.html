@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Configurar Rodada - Bolão</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 16px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin: 0 0 8px 0;
+            color: #1a1a2e;
+        }
+        
+        h2 {
+            font-size: 18px;
+            margin: 0 0 12px 0;
+            color: #16213e;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        
+        h3 {
+            font-size: 16px;
+            margin: 16px 0 8px 0;
+            color: #0f3460;
+        }
+        
+        .status {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .status.erro {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        
+        .status.warning {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .jogo-item {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .jogo-nome {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .jogo-palpite {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .jogo-palpite input {
+            width: 50px;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .pd-checkbox {
+            margin-left: 12px;
+        }
+        
+        .usuario-item {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .usuario-item:hover {
+            background-color: #e9ecef;
+        }
+        
+        .usuario-item.selecionado {
+            background-color: #e3f2fd;
+            border-color: #2196f3;
+        }
+        
+        .usuario-nome {
+            flex: 1;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-pd {
+            background-color: #ff9800;
+            color: white;
+        }
+        
+        .badge-trunfo {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .badge-info {
+            background-color: #2196f3;
+            color: white;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .btn-primary {
+            background-color: #2196f3;
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #9e9e9e;
+            color: white;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid #2196f3;
+            color: #2196f3;
+        }
+        
+        .btn-small {
+            padding: 4px 12px;
+            font-size: 12px;
+        }
+        
+        .horario-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2196f3;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .footer-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .footer-buttons .btn {
+            flex: 1;
+        }
+        
+        .contador {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+        }
+        
+        .selecionar-todos {
+            font-size: 12px;
+            color: #2196f3;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        .selecionar-todos:hover {
+            color: #0d47a1;
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+            
+            .jogo-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .jogo-palpite {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .usuario-item {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🎯 Configurar Rodada</h1>
+            <div id="status" class="status">🔄 Carregando dados...</div>
+        </div>
+        
+        <div id="conteudo" style="display: none;">
+            <!-- Jogos -->
+            <div class="card">
+                <div class="section-header">
+                    <h2>⚽ Jogos da Rodada</h2>
+                    <span id="jogos-contador" class="contador"></span>
+                </div>
+                <div id="jogos-lista"></div>
+            </div>
+            
+            <!-- Trunfos -->
+            <div class="card">
+                <div class="section-header">
+                    <h2>🎖️ Trunfos</h2>
+                    <span class="selecionar-todos" onclick="selecionarTodosTrunfos()">Selecionar todos</span>
+                </div>
+                <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
+                    Usuários com trunfo podem palpitar até 30 minutos após o horário limite
+                </p>
+                <div id="trunfos-lista"></div>
+            </div>
+            
+            <!-- Pontuação Dobrada (Bloqueados) -->
+            <div class="card">
+                <div class="section-header">
+                    <h2>🔒 Pontuação Dobrada (Já Usaram)</h2>
+                    <span class="selecionar-todos" onclick="selecionarTodosDobrada()">Selecionar todos</span>
+                </div>
+                <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
+                    ⚠️ Usuários selecionados NÃO poderão usar PD nesta rodada
+                </p>
+                <div id="dobrada-lista"></div>
+            </div>
+            
+            <!-- Horário -->
+            <div class="card">
+                <h2>⏰ Horário de Fechamento</h2>
+                <input type="datetime-local" id="horario" class="horario-input">
+                <p style="font-size: 12px; color: #666; margin-top: 8px;">
+                    Após este horário, apenas usuários com trunfo podem palpitar
+                </p>
+            </div>
+            
+            <!-- Botões -->
+            <div class="card">
+                <div class="footer-buttons">
+                    <button class="btn btn-secondary" onclick="cancelar()">Cancelar</button>
+                    <button class="btn btn-success" onclick="enviarRodada()">✅ Criar Rodada</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let dadosRodada = null;
+    let usuarios = [];
+    let jogos = [];
+    let selecionadosTrunfo = new Set();
+    let selecionadosDobrada = new Set();
+    
+    // ⭐ CONFIGURAÇÃO DA API (seu servidor na VPS)
+    const API_URL = "http://76.13.169.201:8003";
+    
+    // Telegram WebApp
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+    
+    // Extrai parâmetros da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const tipo = urlParams.get('tipo');
+    const rodadasParam = urlParams.get('rodadas');
+    
+    console.log('Token:', token);
+    console.log('Tipo:', tipo);
+    console.log('Rodadas:', rodadasParam);
+    console.log('API_URL:', API_URL);
+    
+    // Validação inicial
+    if (!token) {
+        document.getElementById('status').innerHTML = 
+            '<div class="status erro">❌ Token não informado na URL</div>';
+        return;
+    }
+    
+    // Carrega os dados via fetch
+    async function carregarDados() {
+        try {
+            // ⭐ USANDO URL COMPLETA DA API
+            const response = await fetch(`${API_URL}/api/obter_dados_rodada`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    token: token,
+                    rodada_num: rodadasParam ? rodadasParam.split(',')[0] : null
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.sucesso) {
+                document.getElementById('status').innerHTML = 
+                    `<div class="status erro">❌ Erro: ${data.erro}</div>`;
+                return;
+            }
+            
+            dadosRodada = data;
+            jogos = data.jogos;
+            usuarios = data.usuarios;
+            
+            // Marca automaticamente quem já usou PD
+            for (const usuario of usuarios) {
+                if (usuario.pd_ja_usada) {
+                    selecionadosDobrada.add(usuario.id);
+                }
+            }
+            
+            // Atualiza interface
+            atualizarInterface();
+            
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('conteudo').style.display = 'block';
+            
+            // Ajusta altura do WebApp
+            tg.expand();
+            
+        } catch (error) {
+            console.error('Erro ao carregar dados:', error);
+            document.getElementById('status').innerHTML = 
+                `<div class="status erro">❌ Erro ao carregar dados: ${error.message}<br><br>
+                Verifique se o servidor está rodando em ${API_URL}</div>`;
+        }
+    }
+    
+    function atualizarInterface() {
+        // Jogos
+        const jogosDiv = document.getElementById('jogos-lista');
+        const jogosContador = document.getElementById('jogos-contador');
+        jogosContador.textContent = `${jogos.length} jogos`;
+        
+        jogosDiv.innerHTML = '';
+        for (let i = 0; i < jogos.length; i++) {
+            const jogo = jogos[i];
+            const div = document.createElement('div');
+            div.className = 'jogo-item';
+            div.innerHTML = `
+                <div class="jogo-nome">${jogo.mandante} x ${jogo.visitante}</div>
+                <div class="jogo-palpite">
+                    <span style="font-size: 12px; color: #999;">ID: ${jogo.id}</span>
+                </div>
+            `;
+            jogosDiv.appendChild(div);
+        }
+        
+        // Trunfos
+        const trunfosDiv = document.getElementById('trunfos-lista');
+        trunfosDiv.innerHTML = '';
+        for (const usuario of usuarios) {
+            const div = document.createElement('div');
+            div.className = `usuario-item ${selecionadosTrunfo.has(usuario.id) ? 'selecionado' : ''}`;
+            div.onclick = () => toggleTrunfo(usuario.id);
+            div.innerHTML = `
+                <span class="usuario-nome">${usuario.nome}</span>
+                ${usuario.pd_ja_usada ? '<span class="badge badge-pd">⚠️ PD já usada</span>' : ''}
+            `;
+            trunfosDiv.appendChild(div);
+        }
+        
+        // Pontuação Dobrada (Bloqueados)
+        const dobradaDiv = document.getElementById('dobrada-lista');
+        dobradaDiv.innerHTML = '';
+        for (const usuario of usuarios) {
+            const div = document.createElement('div');
+            div.className = `usuario-item ${selecionadosDobrada.has(usuario.id) ? 'selecionado' : ''}`;
+            div.onclick = () => toggleDobrada(usuario.id);
+            
+            let badgeHtml = '';
+            if (usuario.pd_ja_usada) {
+                badgeHtml = '<span class="badge badge-pd">⚠️ Bloqueado automático</span>';
+            }
+            
+            div.innerHTML = `
+                <span class="usuario-nome">${usuario.nome}</span>
+                ${badgeHtml}
+            `;
+            dobradaDiv.appendChild(div);
+        }
+    }
+    
+    function toggleTrunfo(usuarioId) {
+        if (selecionadosTrunfo.has(usuarioId)) {
+            selecionadosTrunfo.delete(usuarioId);
+        } else {
+            selecionadosTrunfo.add(usuarioId);
+        }
+        atualizarInterface();
+    }
+    
+    function toggleDobrada(usuarioId) {
+        const usuario = usuarios.find(u => u.id === usuarioId);
+        
+        // Se já usou PD automaticamente, não pode desmarcar
+        if (usuario && usuario.pd_ja_usada) {
+            tg.showAlert('⚠️ Este usuário já usou PD em rodada anterior e não pode desbloquear!');
+            return;
+        }
+        
+        if (selecionadosDobrada.has(usuarioId)) {
+            selecionadosDobrada.delete(usuarioId);
+        } else {
+            selecionadosDobrada.add(usuarioId);
+        }
+        atualizarInterface();
+    }
+    
+    function selecionarTodosTrunfos() {
+        for (const usuario of usuarios) {
+            selecionadosTrunfo.add(usuario.id);
+        }
+        atualizarInterface();
+    }
+    
+    function selecionarTodosDobrada() {
+        for (const usuario of usuarios) {
+            // Não força bloqueio em quem já usou (já está bloqueado)
+            if (!usuario.pd_ja_usada) {
+                selecionadosDobrada.add(usuario.id);
+            }
+        }
+        atualizarInterface();
+    }
+    
+    function cancelar() {
+        tg.close();
+    }
+    
+    function enviarRodada() {
+        const horario = document.getElementById('horario').value;
+        
+        // Valida horário
+        if (!horario) {
+            tg.showAlert('⚠️ Por favor, defina o horário de fechamento!');
+            return;
+        }
+        
+        // Prepara dados para enviar
+        const dadosEnvio = {
+            tipo: tipo === 'multipla' ? 'multipla' : 'unica',
+            token: token,
+            horario: horario,
+            trunfo: Array.from(selecionadosTrunfo),
+            dobrada: Array.from(selecionadosDobrada)
+        };
+        
+        if (tipo === 'multipla') {
+            // Para múltiplas rodadas
+            const rodadas = rodadasParam.split(',');
+            dadosEnvio.rodadas = rodadas.map(r => ({
+                numero: parseInt(r),
+                jogos: jogos.map(j => j.id),
+                trunfo: Array.from(selecionadosTrunfo),
+                dobrada: Array.from(selecionadosDobrada),
+                horario: horario
+            }));
+        } else {
+            dadosEnvio.rodada = parseInt(rodadasParam);
+            dadosEnvio.jogos = jogos.map(j => j.id);
+        }
+        
+        console.log('Enviando dados:', dadosEnvio);
+        
+        // Envia para o bot via Telegram WebApp
+        tg.sendData(JSON.stringify(dadosEnvio));
+        tg.close();
+    }
+    
+    // Inicia o carregamento
+    carregarDados();
+</script>
+</body>
+</html>
